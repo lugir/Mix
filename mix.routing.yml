@@ -1,0 +1,7 @@
+mix.settings:
+  path: '/admin/config/mix'
+  defaults:
+    _title: 'Mix'
+    _form: 'Drupal\mix\Form\SettingsForm'
+  requirements:
+    _permission: 'administer site configuration'

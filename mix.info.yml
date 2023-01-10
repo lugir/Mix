@@ -1,0 +1,7 @@
+name: Mix
+type: module
+description: A collection of simple but useful features that every Drupal website could use.
+package: Administration
+core: 8.x
+core_version_requirement: ^8 || ^9 || ^10
+configure: mix.settings
