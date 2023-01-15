@@ -2,7 +2,7 @@
 
 Mix is a collection of features for Drupal site buliding, management, development and user experience improving.
 
-The main goals of Mix module includes:
+**The main goals of Mix module includes**:
 - Provide simple but useful features that every Drupal project could use but avoid to install too much dedicated modules.
 - Automate, simplify some common tasks, or provide user-friendly guides to make things more easier.
 - Centralize some common settings and site status information to make site management more efficient.
