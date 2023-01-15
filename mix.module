@@ -5,9 +5,9 @@
  * Primary module hooks for Mix module.
  */
 
- /**
-  * Implements hook_form_alter().
-  */
+/**
+ * Implements hook_form_alter().
+ */
 function mix_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   // Hide revision field.
   $currentUser = \Drupal::currentUser();
