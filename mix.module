@@ -16,3 +16,19 @@ function mix_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state
     $form['revision_information']['#access'] = FALSE;
   }
 }
+
+/**
+ * Implements hook_page_top().
+ */
+function mix_page_top(array &$page_top) {
+  $env = \Drupal::state()->get('mix.environment_indicator');
+  if ($env) {
+    $page_top['mix_environment_indicator'] = [
+      '#type' => 'inline_template',
+      '#template' => '<div style="color: #fff; background: orange; text-align: center;">{{ env }}</div>',
+      '#context' => [
+        'env' => $env,
+      ],
+    ];
+  }
+}
