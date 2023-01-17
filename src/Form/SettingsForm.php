@@ -45,7 +45,7 @@ class SettingsForm extends ConfigFormBase {
     $form['dev']['environment_indicator'] = [
       '#title' => $this->t('Environment Indicator'),
       '#type' => 'textfield',
-      '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or anyother text) on the top of this site to help you identify current environment.
+      '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
         <br>Leave it blank in the Live environment or hide the indicator.'),
       '#default_value' => \Drupal::state()->get('mix.environment_indicator'),
     ];
@@ -71,6 +71,7 @@ class SettingsForm extends ConfigFormBase {
       ->save();
 
     // Save states.
+    // TODO: If settings change, trigger cache clear.
     \Drupal::state()->set('mix.environment_indicator', $form_state->getValue('environment_indicator'));
 
     parent::submitForm($form, $form_state);
