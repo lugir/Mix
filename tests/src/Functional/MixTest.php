@@ -7,6 +7,7 @@ use Drupal\Tests\node\Functional\NodeTestBase;
 /**
  * Tests the UI of node revision field.
  *
+ * @covers \Drupal\mix\Form\SettingsForm
  * @group mix
  */
 class MixTest extends NodeTestBase {
@@ -17,6 +18,8 @@ class MixTest extends NodeTestBase {
   protected $defaultTheme = 'stark';
 
   /**
+   * Editor user account.
+   *
    * @var \Drupal\user\Entity\User
    */
   protected $editor;
@@ -41,6 +44,8 @@ class MixTest extends NodeTestBase {
 
   /**
    * Test hide revision field.
+   *
+   * @covers ::mix_form_alter
    */
   public function testHideRevisionField() {
 
@@ -65,6 +70,8 @@ class MixTest extends NodeTestBase {
 
   /**
    * Test environment indicator.
+   *
+   * @covers ::mix_page_top
    */
   public function testEnvironmentIndicator() {
 
