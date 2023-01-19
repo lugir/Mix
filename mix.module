@@ -11,8 +11,8 @@
 function mix_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
   // Hide revision field.
   $currentUser = \Drupal::currentUser();
-  $hide_revision_field = \Drupal::config('mix.settings')->get('hide_revision_field');
-  if ($currentUser->id() != 1 && $hide_revision_field) {
+  $hideRevisionField = \Drupal::config('mix.settings')->get('hide_revision_field');
+  if ($currentUser->id() != 1 && $hideRevisionField) {
     $form['revision_information']['#access'] = FALSE;
   }
 }
@@ -21,13 +21,18 @@ function mix_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state
  * Implements hook_page_top().
  */
 function mix_page_top(array &$page_top) {
-  $env = \Drupal::state()->get('mix.environment_indicator');
-  if ($env) {
+  $environmentIndicator = \Drupal::state()->get('mix.environment_indicator');
+  if ($environmentIndicator) {
     $page_top['mix_environment_indicator'] = [
       '#type' => 'inline_template',
-      '#template' => '<div style="color: #fff; background: orange; text-align: center;">{{ env }}</div>',
+      '#template' => '<div id="mix-environment-indicator" style="color: #fff; background: orange; text-align: center;">{{ env }}</div>',
       '#context' => [
-        'env' => $env,
+        'env' => $environmentIndicator,
+      ],
+      '#cache' => [
+        'tags' => [
+          'mix:environment-indicator',
+        ],
       ],
     ];
   }

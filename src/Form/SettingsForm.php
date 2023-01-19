@@ -2,6 +2,7 @@
 
 namespace Drupal\mix\Form;
 
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -70,9 +71,12 @@ class SettingsForm extends ConfigFormBase {
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
       ->save();
 
-    // Save states.
-    // TODO: If settings change, trigger cache clear.
-    \Drupal::state()->set('mix.environment_indicator', $form_state->getValue('environment_indicator'));
+    // Update state value and invalidate caches when this config changes.
+    $newEnvironmentIndicator = $form_state->getValue('environment_indicator');
+    if (\Drupal::state()->get('mix.environment_indicator') != $newEnvironmentIndicator) {
+      \Drupal::state()->set('mix.environment_indicator', $newEnvironmentIndicator);
+      Cache::invalidateTags(['mix:environment-indicator']);
+    }
 
     parent::submitForm($form, $form_state);
   }
