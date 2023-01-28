@@ -27,7 +27,3 @@ information, see
 ## Configuration
 
 - Configure Mix module at */admin/config/mix*.
-
-## Maintainers
-
-- Yuan - https://www.drupal.org/u/lugir

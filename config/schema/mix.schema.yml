@@ -7,3 +7,7 @@ mix.settings:
       type: boolean
       label: 'Hide revision field'
       translatable: true
+    dev_mode:
+      type: boolean
+      label: 'Enable development mode'
+      translatable: true

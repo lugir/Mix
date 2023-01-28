@@ -1,0 +1,6 @@
+services:
+  mix.event_subscriber:
+    class: Drupal\mix\EventSubscriber\MixSubscriber
+    arguments: ['@current_user']
+    tags:
+      - { name: event_subscriber }
