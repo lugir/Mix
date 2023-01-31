@@ -43,11 +43,11 @@ class MixSubscriber implements EventSubscriberInterface {
     $isDevMode = \Drupal::config('mix.settings')->get('dev_mode');
     if ($isDevMode) {
       if ($this->currentUser->hasPermission('administer site configuration')) {
-        $message = $this->t('Under development mode. <a href=":url">Switch Back.</a>', [':url' => \Drupal::urlGenerator()->generateFromRoute('mix.settings')]);
+        $message = $this->t('In development mode. <a href=":url">Go online.</a>', [':url' => \Drupal::urlGenerator()->generateFromRoute('mix.settings')]);
         \Drupal::messenger()->addStatus($message, FALSE);
       }
       else {
-        \Drupal::messenger()->addStatus($this->t('Under development mode.'), FALSE);
+        \Drupal::messenger()->addStatus($this->t('In development mode.'), FALSE);
       }
       // Prevent page to be cached.
       \Drupal::service('page_cache_kill_switch')->trigger();

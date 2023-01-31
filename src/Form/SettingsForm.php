@@ -32,31 +32,19 @@ class SettingsForm extends ConfigFormBase {
 
     $config = $this->config('mix.settings');
 
-    $form['hide_revision_field'] = [
-      '#title' => $this->t('Hide revision field'),
-      '#type' => 'checkbox',
-      '#description' => $this->t('Hide revision field to all users except UID 1 to provide a clear UI'),
-      '#default_value' => $config->get('hide_revision_field'),
-    ];
 
+    // TODO: Group settings.
+    /*
     $form['dev'] = [
       '#title' => $this->t('Development'),
       '#type' => 'details',
       '#open' => TRUE,
     ];
-
-    // Environment indicator.
-    $form['dev']['environment_indicator'] = [
-      '#title' => $this->t('Environment Indicator'),
-      '#type' => 'textfield',
-      '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
-        <br>Leave it blank in the Live environment or hide the indicator.'),
-      '#default_value' => \Drupal::state()->get('mix.environment_indicator'),
-    ];
+    */
 
     // Check dev mode and give tips.
     $devMode = $config->get('dev_mode');
-    $form['dev']['dev_mode'] = [
+    $form['dev_mode'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enable development mode'),
       '#description' => $this->t('Quick switch between Dev/Prod modes to make module and theme develpment way more easier.'),
@@ -64,7 +52,7 @@ class SettingsForm extends ConfigFormBase {
     ];
 
     // Help content for dev_mode configuration.
-    $form['dev']['dev_mode_help'] = [
+    $form['dev_mode_help'] = [
       '#type' => 'inline_template',
       '#template' => '<details>
         <summary>{% trans %}Dev mode vs. Prod mode{% endtrans %}</summary>
@@ -84,27 +72,43 @@ class SettingsForm extends ConfigFormBase {
                 {% trans %}Enable cache{% endtrans %}</td>
           </tr>
           <tr>
-            <td>{% trans %}CSS/JS aggregate and gzip{% endtrans %}</td>
-            <td>{% trans %}Disable{% endtrans %}</td>
-            <td>{% trans %}Enable{% endtrans %}</td>
-          </tr>
-          <tr>
-            <td>{% trans %}Browser and proxy caches{% endtrans %}</td>
-            <td>{% trans %}Disable{% endtrans %}</td>
-            <td>{% trans %}1 minute{% endtrans %}</td>
-          </tr>
-          <tr>
             <td>{% trans %}Backend caches (render cache, page cache, dynamic page cache, etc.){% endtrans %}</td>
             <td>{% trans %}Disable{% endtrans %}</td>
             <td>{% trans %}Enable{% endtrans %}</td>
           </tr>
           <tr>
-            <td>{% trans %}Error message to display{% endtrans %}</td>
+            <td>{% trans %}Browser and proxy caches (Settings){% endtrans %}</td>
+            <td>{% trans %}Disable{% endtrans %}</td>
+            <td>{% trans %}1 minute{% endtrans %}</td>
+          </tr>
+          <tr>
+            <td>{% trans %}CSS/JS aggregate and gzip (Settings){% endtrans %}</td>
+            <td>{% trans %}Disable{% endtrans %}</td>
+            <td>{% trans %}Enable{% endtrans %}</td>
+          </tr>
+          <tr>
+            <td>{% trans %}Error message to display (Settings){% endtrans %}</td>
             <td>{% trans %}All messages, with backtrace information{% endtrans %}</td>
             <td>{% trans %}None{% endtrans %}</td>
           </tr>
           </table>
         </details>',
+    ];
+
+    $form['hide_revision_field'] = [
+      '#title' => $this->t('Hide revision field'),
+      '#type' => 'checkbox',
+      '#description' => $this->t('Hide revision field to all users except UID 1 to provide a clear UI'),
+      '#default_value' => $config->get('hide_revision_field'),
+    ];
+
+    // Environment indicator.
+    $form['environment_indicator'] = [
+      '#title' => $this->t('Environment Indicator'),
+      '#type' => 'textfield',
+      '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
+        <br>Leave it blank in the Live environment or hide the indicator.'),
+      '#default_value' => \Drupal::state()->get('mix.environment_indicator'),
     ];
 
     return parent::buildForm($form, $form_state);
