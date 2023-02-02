@@ -32,16 +32,6 @@ class SettingsForm extends ConfigFormBase {
 
     $config = $this->config('mix.settings');
 
-
-    // TODO: Group settings.
-    /*
-    $form['dev'] = [
-      '#title' => $this->t('Development'),
-      '#type' => 'details',
-      '#open' => TRUE,
-    ];
-    */
-
     // Check dev mode and give tips.
     $devMode = $config->get('dev_mode');
     $form['dev_mode'] = [
@@ -77,22 +67,26 @@ class SettingsForm extends ConfigFormBase {
             <td>{% trans %}Enable{% endtrans %}</td>
           </tr>
           <tr>
-            <td>{% trans %}Browser and proxy caches (Settings){% endtrans %}</td>
+            <td>{% trans %}CSS/JS aggregate and gzip{% endtrans %}</td>
             <td>{% trans %}Disable{% endtrans %}</td>
-            <td>{% trans %}1 minute{% endtrans %}</td>
+            <td>{% trans %}Enable{% endtrans %}</a></td>
           </tr>
           <tr>
-            <td>{% trans %}CSS/JS aggregate and gzip (Settings){% endtrans %}</td>
+            <td>{% trans %}Browser and proxy caches{% endtrans %}</td>
             <td>{% trans %}Disable{% endtrans %}</td>
-            <td>{% trans %}Enable{% endtrans %}</td>
+            <td><a href="{{ performanceSettingsUrl }}" target="_blank">{% trans %}Settings{% endtrans %}</a></td>
           </tr>
           <tr>
-            <td>{% trans %}Error message to display (Settings){% endtrans %}</td>
+            <td>{% trans %}Error message to display{% endtrans %}</td>
             <td>{% trans %}All messages, with backtrace information{% endtrans %}</td>
-            <td>{% trans %}None{% endtrans %}</td>
+            <td><a href="{{ errorMessageSettingsUrl }}" target="_blank">{% trans %}Settings{% endtrans %}</a></td>
           </tr>
           </table>
         </details>',
+      '#context' => [
+        'performanceSettingsUrl' => \Drupal::urlGenerator()->generateFromRoute('system.performance_settings', [], ['fragment' => 'edit-caching']),
+        'errorMessageSettingsUrl' => \Drupal::urlGenerator()->generateFromRoute('system.logging_settings'),
+      ],
     ];
 
     $form['hide_revision_field'] = [
@@ -148,78 +142,11 @@ class SettingsForm extends ConfigFormBase {
     // Only run this when dev_mode has changed.
     $devModeChanged = $form_state->getValue('dev_mode') != $originDevMode;
     if ($devModeChanged) {
-      $form_state->getValue('dev_mode') ? $this->enableDevMode() : $this->disableDevMode();
-      // Clear cache to rebuild service providers based on dev_mode.
+      // Clear cache to rebulid service providers and configurations based on dev_mode.
       drupal_flush_all_caches();
     }
 
     parent::submitForm($form, $form_state);
-  }
-
-  /**
-   * Switch site configurations to development mode.
-   *
-   * Disable browser and proxy cache.
-   * Disable CSS/JS aggregate and gzip.
-   * Show all error messages.
-   * Disable render cache, page cache and dynamic page cache.
-   * Enable Twig Debug.
-   */
-  public function enableDevMode() {
-
-    $configFactory = \Drupal::configFactory();
-
-    // Disable browser and proxy cache.
-    $configFactory->getEditable('system.performance')
-      ->set('cache', ['page' => ['max_age' => 0]])
-      ->save();
-
-    // Disable CSS aggregate and gzip.
-    $configFactory->getEditable('system.performance')->set('css', [
-      'preprocess' => 0,
-      'gzip' => 0,
-    ])->save();
-
-    // Disable CSS aggregate and gzip.
-    $configFactory->getEditable('system.performance')->set('js', [
-      'preprocess' => 0,
-      'gzip' => 0,
-    ])->save();
-
-    // Show all error messages, with backtrace information.
-    $configFactory->getEditable('system.logging')
-      ->set('error_level', 'verbose')
-      ->save();
-  }
-
-  /**
-   * Switch site configurations to prod mode.
-   */
-  public function disableDevMode() {
-
-    $configFactory = \Drupal::configFactory();
-
-    // Disable browser and proxy cache.
-    $configFactory->getEditable('system.performance')
-      ->set('cache', ['page' => ['max_age' => 60]])
-      ->save();
-
-    // Disable CSS aggregate and gzip.
-    $configFactory->getEditable('system.performance')->set('css', [
-      'preprocess' => 1,
-      'gzip' => 1,
-    ])->save();
-
-    // Disable CSS aggregate and gzip.
-    $configFactory->getEditable('system.performance')->set('js', [
-      'preprocess' => 1,
-      'gzip' => 1,
-    ])->save();
-
-    // Hide error message.
-    $configFactory->getEditable('system.logging')
-      ->set('error_level', 'hide')
-      ->save();
   }
 
 }
