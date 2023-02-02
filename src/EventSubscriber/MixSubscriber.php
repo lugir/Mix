@@ -39,7 +39,7 @@ class MixSubscriber implements EventSubscriberInterface {
    * @param \Symfony\Component\HttpKernel\Event\RequestEvent $event
    *   Response event.
    */
-  public function onKernelRequest(RequestEvent $event) {
+  public function handleDevMode(RequestEvent $event) {
     $isDevMode = \Drupal::config('mix.settings')->get('dev_mode');
     if ($isDevMode) {
       if ($this->currentUser->hasPermission('administer site configuration')) {
@@ -60,18 +60,21 @@ class MixSubscriber implements EventSubscriberInterface {
    * @param \Symfony\Component\HttpKernel\Event\ResponseEvent $event
    *   Response event.
    */
-  public function onKernelResponse(ResponseEvent $event) {
-    // @todo Place code here.
+  public function removeHttpHeaders(ResponseEvent $event) {
+    $removeXGenerator = \Drupal::config('mix.settings')->get('remove_x_generator');
+    if ($removeXGenerator) {
+      $response = $event->getResponse();
+      $response->headers->remove('X-Generator');
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    return [
-      KernelEvents::REQUEST => ['onKernelRequest', 30],
-      KernelEvents::RESPONSE => ['onKernelResponse'],
-    ];
+    $events[KernelEvents::REQUEST][] = ['handleDevMode', 30];
+    $events[KernelEvents::RESPONSE][] = ['removeHttpHeaders', -10];
+    return $events;
   }
 
 }

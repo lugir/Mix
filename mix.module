@@ -37,3 +37,16 @@ function mix_page_top(array &$page_top) {
     ];
   }
 }
+
+/**
+ * Remove the "Generator" meta tag from the <head> section.
+ */
+function mix_page_attachments_alter(array &$attachments): void {
+  if (\Drupal::config('mix.settings')->get('remove_x_generator')) {
+    foreach ($attachments['#attached']['html_head'] as $key => $attachment) {
+      if ($attachment[1] == 'system_meta_generator') {
+        unset($attachments['#attached']['html_head'][$key]);
+      }
+    }
+  }
+}

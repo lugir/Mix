@@ -89,6 +89,13 @@ class SettingsForm extends ConfigFormBase {
       ],
     ];
 
+    $form['remove_x_generator'] = [
+      '#title' => $this->t('Remove X-Generator'),
+      '#type' => 'checkbox',
+      '#description' => $this->t('Remove HTTP header "X-Generator" and meta @meta to obfuscate that your website is running on Drupal', ['@meta' => '<meta name="Generator" content="Drupal 10 (https://www.drupal.org)">']),
+      '#default_value' => $config->get('remove_x_generator'),
+    ];
+
     $form['hide_revision_field'] = [
       '#title' => $this->t('Hide revision field'),
       '#type' => 'checkbox',
@@ -130,6 +137,7 @@ class SettingsForm extends ConfigFormBase {
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
+      ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->save();
 
     // Save state value and invalidate caches when this config changes.

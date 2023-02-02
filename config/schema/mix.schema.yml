@@ -11,3 +11,7 @@ mix.settings:
       type: boolean
       label: 'Enable development mode'
       translatable: true
+    remove_x_generator:
+      type: boolean
+      label: 'Remove X-Generator'
+      translatable: true

@@ -98,4 +98,30 @@ class MixTest extends NodeTestBase {
     $this->assertSession()->elementNotExists('xpath', $xpath);
   }
 
+  /**
+   * Test hide revision field.
+   *
+   * @covers ::mix_page_attachments_alter
+   */
+  public function testRemoveGenerator() {
+
+    // Disable browser cache.
+    $this->config('system.performance')->set('cache.page.max_age', 0)->save();
+
+    // Default behavior.
+    $this->drupalGet('');
+    // X-Generator exist.
+    $this->assertSession()->responseHeaderExists('X-Generator');
+    $this->assertSession()->responseContains('<meta name="Generator" content="Drupal');
+
+    // Enable "remove_x_generator".
+    $this->config('mix.settings')->set('remove_x_generator', 1)->save();
+
+    $this->drupalLogin($this->rootUser);
+    // No HTTP header X-Generator.
+    $this->assertSession()->responseHeaderDoesNotExist('X-Generator');
+    // No meta Generator.
+    $this->assertSession()->responseNotContains('<meta name="Generator" content="Drupal');
+  }
+
 }
