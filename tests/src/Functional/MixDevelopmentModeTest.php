@@ -22,6 +22,20 @@ class MixDevelopmentModeTest extends BrowserTestBase {
   protected static $modules = ['system', 'ajax_test', 'error_test', 'mix'];
 
   /**
+   * Path of main test page.
+   *
+   * @var string
+   */
+  protected $testPath = '/ajax-test/insert-block-wrapper';
+
+  /**
+   * Path of error test page.
+   *
+   * @var string
+   */
+  protected $errorTestPath = '/error-test/generate-warnings';
+
+  /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
@@ -29,7 +43,7 @@ class MixDevelopmentModeTest extends BrowserTestBase {
   }
 
   /**
-   * Test hide revision field.
+   * Test development mode.
    *
    * @covers Drupal\mix\EventSubscriber\MixSubscriber
    * @covers Drupal\mix\MixServiceProvider
@@ -49,56 +63,13 @@ class MixDevelopmentModeTest extends BrowserTestBase {
       ->save();
 
     // Before enable development mode.
-    // Anonymous user.
-    $testPath = '/ajax-test/insert-block-wrapper';
-    $errorTestPath = '/error-test/generate-warnings';
-    // First visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No caches.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Cache', 'Miss');
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
-    // No twig debug info.
-    $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
-    // CSS/JS aggregated.
-    $this->assertSession()->elementNotExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
-    $this->assertSession()->elementNotExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
-    // No dev mode message.
-    $this->assertSession()->linkNotExists('Go online.');
-
-    // Second visit.
-    $this->drupalGet($testPath);
-    // Page cache hit.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Cache', 'Hit');
-    // No dynamic page cache for anonymous user.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
-
-    // No error message.
-    $this->drupalGet($errorTestPath);
-    $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->responseNotContains('<pre class="backtrace">');
+    // Assert anonymous user.
+    $this->assertAnonUserWithDevelopmentModeDisabled();
 
     // Login as root user.
     $this->drupalLogin($this->rootUser);
-    // First visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No page cache header for authenticated user.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    // Dynamic page cache MISS on first visit.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
-    // No twig debug info.
-    $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
-    // CSS/JS aggregated.
-    $this->assertSession()->elementNotExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
-    $this->assertSession()->elementNotExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
-    // No dev mode message.
-    $this->assertSession()->linkNotExists('Go online.');
-
-    // Second visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No page cache for authenticated user.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    // Dynamic page cache HIT on second visit.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Hit');
+    // Assert authenticate user.
+    $this->assertAuthUserWithDevelopmentModeDisabled();
 
     // Enable development mode.
     $this->drupalGet('admin/config/mix');
@@ -108,37 +79,7 @@ class MixDevelopmentModeTest extends BrowserTestBase {
     $this->assertSession()->statusCodeEquals(200);
 
     // After enable development mode.
-    // First visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No dynamic page cache.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Dynamic-Cache');
-    // No page cache.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    $this->assertSession()->responseHeaderContains('Cache-Control', 'must-revalidate, no-cache, private');
-    // Twig debug enabled.
-    $this->assertStringContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup found in page source code when development mode is enabled.');
-    // CSS/JS not aggregated.
-    $this->assertSession()->elementExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
-    $this->assertSession()->elementExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
-    // Dev mode message.
-    $this->assertSession()->linkExists('Go online.');
-
-    // Second visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // Still no dynamic page cache.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Dynamic-Cache');
-    // Still no page cache.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    // Twig debug still enabled.
-    $this->assertStringContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup found in page source code when development mode is enabled.');
-    // CSS/JS still not aggregated.
-    $this->assertStringContainsString('/core/modules/system/css/components/js.module.css', $pageHtml, 'js.module.css not found in page source code when development mode is enabled.');
-    $this->assertStringContainsString('/core/misc/drupal.js', $pageHtml, 'drupal.js not found in page source code when development mode is enabled.');
-
-    // Error message shows.
-    $this->drupalGet($errorTestPath);
-    $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->responseContains('<pre class="backtrace">');
+    $this->assertAuthUserWithDevelopmentModeEnabled();
 
     // Disabled development mode (switch to Prod mode).
     $this->drupalGet('admin/config/mix');
@@ -148,11 +89,23 @@ class MixDevelopmentModeTest extends BrowserTestBase {
     $this->assertSession()->statusCodeEquals(200);
 
     // After disable development mode.
+    $this->assertAuthUserWithDevelopmentModeDisabled();
+
+    // Logout.
+    $this->drupalLogout();
+
+    // Assert anonymous user.
+    $this->assertAnonUserWithDevelopmentModeDisabled();
+  }
+
+  /**
+   * Assert anonymous user with development mode disabled.
+   */
+  private function assertAnonUserWithDevelopmentModeDisabled() {
     // First visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No page cache header for authenticated user.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    // Dynamic page cache MISS on first visit.
+    $pageHtml = $this->drupalGet($this->testPath);
+    // No caches.
+    $this->assertSession()->responseHeaderContains('X-Drupal-Cache', 'Miss');
     $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
     // No twig debug info.
     $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
@@ -163,38 +116,92 @@ class MixDevelopmentModeTest extends BrowserTestBase {
     $this->assertSession()->linkNotExists('Go online.');
 
     // Second visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No page cache for authenticated user.
-    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
-    // Dynamic page cache HIT on second visit.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Hit');
-
-    // No error message.
-    $this->drupalGet($errorTestPath);
-    $this->assertSession()->statusCodeEquals(200);
-    $this->assertSession()->responseNotContains('<pre class="backtrace">');
-
-    // Logout.
-    $this->drupalLogout();
-
-    // Anonymous user.
-    // First visit.
-    $pageHtml = $this->drupalGet($testPath);
-    // No caches.
-    $this->assertSession()->responseHeaderContains('X-Drupal-Cache', 'Miss');
-    $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
-    // No twig debug info.
-    $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
-    // CSS/JS aggregated.
-    $this->assertSession()->elementNotExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
-    $this->assertSession()->elementNotExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
-
-    // Second visit.
-    $this->drupalGet($testPath);
+    $this->drupalGet($this->testPath);
     // Page cache hit.
     $this->assertSession()->responseHeaderContains('X-Drupal-Cache', 'Hit');
     // No dynamic page cache for anonymous user.
     $this->assertSession()->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
+
+    // No error message.
+    $this->drupalGet($this->errorTestPath);
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->responseNotContains('<pre class="backtrace">');
+  }
+
+  /**
+   * Assert authenticate user with development mode disabled.
+   */
+  private function assertAuthUserWithDevelopmentModeDisabled() {
+
+    // First visit.
+    $pageHtml = $this->drupalGet($this->testPath);
+    // No twig debug info.
+    $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
+
+    $assertSession = $this->assertSession();
+    // No page cache header for authenticated user.
+    $assertSession->responseHeaderDoesNotExist('X-Drupal-Cache');
+    // Dynamic page cache MISS on first visit.
+    $assertSession->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Miss');
+    // CSS/JS aggregated.
+    $assertSession->elementNotExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
+    $assertSession->elementNotExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
+    // No dev mode message.
+    $assertSession->linkNotExists('Go online.');
+
+    // Second visit.
+    $this->drupalGet($this->testPath);
+    $assertSession = $this->assertSession();
+    // No page cache for authenticated user.
+    $assertSession->responseHeaderDoesNotExist('X-Drupal-Cache');
+    // Dynamic page cache HIT on second visit.
+    $assertSession->responseHeaderContains('X-Drupal-Dynamic-Cache', 'Hit');
+
+    // No error message.
+    $this->drupalGet($this->errorTestPath);
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->responseNotContains('<pre class="backtrace">');
+  }
+
+  /**
+   * Assert authenticate user with development mode enabled.
+   */
+  private function assertAuthUserWithDevelopmentModeEnabled() {
+    // First visit.
+    $pageHtml = $this->drupalGet($this->testPath);
+    // Twig debug enabled.
+    $this->assertStringContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup found in page source code when development mode is enabled.');
+
+    $assertSession = $this->assertSession();
+    // No dynamic page cache.
+    $assertSession->responseHeaderDoesNotExist('X-Drupal-Dynamic-Cache');
+    // No page cache.
+    $assertSession->responseHeaderDoesNotExist('X-Drupal-Cache');
+    $assertSession->responseHeaderContains('Cache-Control', 'must-revalidate, no-cache, private');
+
+    // CSS/JS not aggregated.
+    $assertSession->elementExists('xpath', '//script[contains(@src, "/core/misc/drupal.js")]');
+    $assertSession->elementExists('xpath', '//link[contains(@href, "/core/modules/system/css/components/js.module.css")]');
+    // Dev mode message.
+    $assertSession->linkExists('Go online.');
+
+    // Second visit.
+    $pageHtml = $this->drupalGet($this->testPath);
+    // Twig debug still enabled.
+    $this->assertStringContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup found in page source code when development mode is enabled.');
+    // CSS/JS still not aggregated.
+    $this->assertStringContainsString('/core/modules/system/css/components/js.module.css', $pageHtml, 'js.module.css not found in page source code when development mode is enabled.');
+    $this->assertStringContainsString('/core/misc/drupal.js', $pageHtml, 'drupal.js not found in page source code when development mode is enabled.');
+
+    // Still no dynamic page cache.
+    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Dynamic-Cache');
+    // Still no page cache.
+    $this->assertSession()->responseHeaderDoesNotExist('X-Drupal-Cache');
+
+    // Error message shows.
+    $this->drupalGet($this->errorTestPath);
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->responseContains('<pre class="backtrace">');
   }
 
 }
