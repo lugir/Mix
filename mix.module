@@ -5,10 +5,12 @@
  * Primary module hooks for Mix module.
  */
 
+use Drupal\Core\Form\FormStateInterface;
+
 /**
  * Implements hook_form_alter().
  */
-function mix_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function mix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // Hide revision field.
   $currentUser = \Drupal::currentUser();
   $hideRevisionField = \Drupal::config('mix.settings')->get('hide_revision_field');
