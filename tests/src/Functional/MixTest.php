@@ -43,6 +43,37 @@ class MixTest extends NodeTestBase {
   }
 
   /**
+   * Test settings form.
+   *
+   * @covers SettingsForm::buildForm
+   */
+  public function testSettingsForm() {
+
+    $mixConfigPage = '/admin/config/mix';
+
+    // Test anonymous account.
+    $this->drupalGet($mixConfigPage);
+    $this->assertSession()->statusCodeEquals(403);
+
+    // Test authenticate account.
+    $authUser = $this->drupalCreateUser([]);
+    $this->drupalLogin($authUser);
+    $this->drupalGet($mixConfigPage);
+    $this->assertSession()->statusCodeEquals(403);
+
+    // Test account with config admin permission.
+    $configAdminUser = $this->drupalCreateUser(['administer site configuration']);
+    $this->drupalLogin($configAdminUser);
+    $this->drupalGet($mixConfigPage);
+    $assertSession = $this->assertSession();
+    $assertSession->statusCodeEquals(200);
+    $assertSession->fieldExists('Enable development mode');
+    $assertSession->fieldExists('Remove X-Generator');
+    $assertSession->fieldExists('Hide revision field');
+    $assertSession->fieldExists('Environment Indicator');
+  }
+
+  /**
    * Test hide revision field.
    *
    * @covers ::mix_form_alter
