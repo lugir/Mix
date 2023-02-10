@@ -15,7 +15,7 @@ class MixServiceProvider extends ServiceProviderBase {
    * {@inheritdoc}
    */
   public function register(ContainerBuilder $container) {
-
+    $container->register('cache.render', 'Drupal\mix\Cache\NullBackendFactory');
   }
 
   /**
@@ -45,7 +45,8 @@ class MixServiceProvider extends ServiceProviderBase {
       foreach ($ids as $id) {
         if ($container->hasDefinition($id)) {
           $definition = $container->getDefinition($id);
-          $definition->setClass('Drupal\Core\Cache\NullBackendFactory');
+          $definition->setClass('Drupal\mix\Cache\NullBackendFactory');
+          $definition->addTag('cache.bin', ['default_backend' => 'mix.cache.backend.null']);
         }
       }
 

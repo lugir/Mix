@@ -4,8 +4,9 @@ services:
     arguments: ['@current_user']
     tags:
       - { name: event_subscriber }
-
   mix.config_overrider:
     class: Drupal\mix\Config\ConfigOverride
     tags:
       - { name: config.factory.override, priority: 5 }
+  mix.cache.backend.null:
+    class: Drupal\mix\Cache\NullBackendFactory
