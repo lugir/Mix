@@ -152,6 +152,7 @@ class SettingsForm extends ConfigFormBase {
     if ($devModeChanged) {
       // Clear cache to rebulid service providers and configurations based on dev_mode.
       drupal_flush_all_caches();
+      \Drupal::service('kernel')->rebuildContainer();
     }
 
     parent::submitForm($form, $form_state);

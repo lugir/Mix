@@ -5,7 +5,7 @@ namespace Drupal\Tests\mix\Functional;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Test description.
+ * Test the dev_mode config.
  *
  * @group mix
  */
@@ -40,15 +40,6 @@ class MixDevelopmentModeTest extends BrowserTestBase {
    */
   protected function setUp(): void {
     parent::setUp();
-  }
-
-  /**
-   * Test development mode.
-   *
-   * @covers Drupal\mix\EventSubscriber\MixSubscriber
-   * @covers Drupal\mix\MixServiceProvider
-   */
-  public function testDevelopmentMode() {
 
     // Enable page caching and CSS/JS aggregation.
     $this->config('system.performance')
@@ -62,31 +53,34 @@ class MixDevelopmentModeTest extends BrowserTestBase {
       ->set('error_level', ERROR_REPORTING_HIDE)
       ->save();
 
+  }
+
+  /**
+   * Test development mode.
+   *
+   * @covers Drupal\mix\EventSubscriber\MixSubscriber
+   * @covers Drupal\mix\MixServiceProvider
+   */
+  public function testDevelopmentMode() {
+
     // Before enable development mode.
     // Assert anonymous user.
     $this->assertAnonUserWithDevelopmentModeDisabled();
 
     // Login as root user.
     $this->drupalLogin($this->rootUser);
+
     // Assert authenticate user.
     $this->assertAuthUserWithDevelopmentModeDisabled();
 
     // Enable development mode.
-    $this->drupalGet('admin/config/mix');
-    $edit = [];
-    $edit['dev_mode'] = 1;
-    $this->submitForm($edit, 'Save configuration');
-    $this->assertSession()->statusCodeEquals(200);
+    $this->setDevMode(TRUE);
 
     // After enable development mode.
     $this->assertAuthUserWithDevelopmentModeEnabled();
 
     // Disabled development mode (switch to Prod mode).
-    $this->drupalGet('admin/config/mix');
-    $edit = [];
-    $edit['dev_mode'] = 0;
-    $this->submitForm($edit, 'Save configuration');
-    $this->assertSession()->statusCodeEquals(200);
+    $this->setDevMode(FALSE);
 
     // After disable development mode.
     $this->assertAuthUserWithDevelopmentModeDisabled();
@@ -96,6 +90,21 @@ class MixDevelopmentModeTest extends BrowserTestBase {
 
     // Assert anonymous user.
     $this->assertAnonUserWithDevelopmentModeDisabled();
+  }
+
+  /**
+   * Change dev mode and rebulid container.
+   */
+  private function setDevMode($isDevMode) {
+    // Emulate set dev_mode in UI.
+    $this->drupalGet('admin/config/mix');
+    $edit = [];
+    $edit['dev_mode'] = $isDevMode;
+    $this->submitForm($edit, 'Save configuration');
+    $this->assertSession()->statusCodeEquals(200);
+
+    // Rebuild container to refresh twig config.
+    $this->rebuildContainer();
   }
 
   /**
@@ -135,9 +144,11 @@ class MixDevelopmentModeTest extends BrowserTestBase {
 
     // First visit.
     $pageHtml = $this->drupalGet($this->testPath);
+    // Twig debug and auto_reload is disabled.
+    $this->assertFalse($this->container->get('twig')->isDebug());
+    $this->assertFalse($this->container->get('twig')->isAutoReload());
     // No twig debug info.
     $this->assertStringNotContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup not found in page source code when development mode is not enabled.');
-
     $assertSession = $this->assertSession();
     // No page cache header for authenticated user.
     $assertSession->responseHeaderDoesNotExist('X-Drupal-Cache');
@@ -169,6 +180,9 @@ class MixDevelopmentModeTest extends BrowserTestBase {
   private function assertAuthUserWithDevelopmentModeEnabled() {
     // First visit.
     $pageHtml = $this->drupalGet($this->testPath);
+    // Twig debug and auto_reload is enabled.
+    $this->assertTrue($this->container->get('twig')->isDebug());
+    $this->assertTrue($this->container->get('twig')->isAutoReload());
     // Twig debug enabled.
     $this->assertStringContainsString('<!-- THEME DEBUG -->', $pageHtml, 'Twig debug markup found in page source code when development mode is enabled.');
 
