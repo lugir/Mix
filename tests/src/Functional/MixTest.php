@@ -65,12 +65,36 @@ class MixTest extends NodeTestBase {
     $configAdminUser = $this->drupalCreateUser(['administer site configuration']);
     $this->drupalLogin($configAdminUser);
     $this->drupalGet($mixConfigPage);
-    $assertSession = $this->assertSession();
-    $assertSession->statusCodeEquals(200);
-    $assertSession->fieldExists('Enable development mode');
-    $assertSession->fieldExists('Remove X-Generator');
-    $assertSession->fieldExists('Hide revision field');
-    $assertSession->fieldExists('Environment Indicator');
+
+    $this->assertSession()->statusCodeEquals(200);
+    $this->assertSession()->fieldExists('Enable development mode');
+    $this->assertSession()->fieldExists('Remove X-Generator');
+    $this->assertSession()->fieldExists('Hide revision field');
+    $this->assertSession()->fieldExists('Environment Indicator');
+
+    // Assert default values.
+    $this->assertSession()->fieldValueEquals('edit-dev-mode', FALSE);
+    $this->assertSession()->fieldValueEquals('edit-remove-x-generator', FALSE);
+    $this->assertSession()->fieldValueEquals('edit-hide-revision-field', FALSE);
+    $this->assertSession()->fieldValueEquals('edit-environment-indicator', '');
+
+    // Submit form.
+    $edit = [];
+
+    $edit['dev_mode']              = TRUE;
+    $edit['remove_x_generator']    = TRUE;
+    $edit['hide_revision_field']   = TRUE;
+    $edit['environment_indicator'] = 'Development Environment';
+
+    $this->submitForm($edit, 'Save configuration');
+    $this->assertSession()->statusCodeEquals(200);
+
+    // Assert new values.
+    $this->assertSession()->fieldValueEquals('edit-dev-mode', TRUE);
+    $this->assertSession()->fieldValueEquals('edit-remove-x-generator', TRUE);
+    $this->assertSession()->fieldValueEquals('edit-hide-revision-field', TRUE);
+    $this->assertSession()->fieldValueEquals('edit-environment-indicator', 'Development Environment');
+
   }
 
   /**
