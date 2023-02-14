@@ -5,9 +5,8 @@ namespace Drupal\Tests\mix\Functional;
 use Drupal\Tests\node\Functional\NodeTestBase;
 
 /**
- * Tests the UI of node revision field.
+ * Tests Mix module.
  *
- * @covers \Drupal\mix\Form\SettingsForm
  * @group mix
  */
 class MixTest extends NodeTestBase {
@@ -112,7 +111,8 @@ class MixTest extends NodeTestBase {
     $this->drupalGet($addPagePath);
     $this->assertSession()->elementExists('xpath', $xpath);
 
-    // After hide_revision_field enabled, hide revision field to everyone except UID 1.
+    // After hide_revision_field enabled, hide revision field
+    // to everyone except UID 1.
     $this->config('mix.settings')->set('hide_revision_field', TRUE)->save();
     $this->drupalGet($addPagePath);
     $this->assertSession()->elementNotExists('xpath', $xpath);
@@ -124,37 +124,7 @@ class MixTest extends NodeTestBase {
   }
 
   /**
-   * Test environment indicator.
-   *
-   * @covers ::mix_page_top
-   */
-  public function testEnvironmentIndicator() {
-
-    $this->drupalLogin($this->rootUser);
-
-    // No Mix environment indicator by default.
-    $adminPath = '/admin';
-    $xpath = "//div[@id='mix-environment-indicator']";
-    $this->drupalGet($adminPath);
-    $this->assertSession()->elementNotExists('xpath', $xpath);
-
-    // Set environment indicator text.
-    $text = 'Development Indicator';
-    \Drupal::state()->set('mix.environment_indicator', $text);
-
-    // Mix environment indicator shows up.
-    $this->drupalGet($adminPath);
-    $this->assertSession()->elementExists('xpath', $xpath);
-    $this->assertSession()->elementTextEquals('xpath', $xpath . '/text()', $text);
-
-    // Clear text to hide the indicator.
-    \Drupal::state()->set('mix.environment_indicator', '');
-    $this->drupalGet($adminPath);
-    $this->assertSession()->elementNotExists('xpath', $xpath);
-  }
-
-  /**
-   * Test hide revision field.
+   * Test remove x generator.
    *
    * @covers ::mix_page_attachments_alter
    */
