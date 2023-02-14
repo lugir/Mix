@@ -33,7 +33,12 @@ class MixServiceProvider extends ServiceProviderBase {
   public function register(ContainerBuilder $container) {
     // Only override services when dev_mode is enabled.
     if ($this->isDevMode) {
-      $container->register('cache.render', 'Drupal\mix\Cache\NullBackendFactory');
+      $cacheBins = ['cache.render', 'cache.page', 'cache.dynamic_page_cache'];
+      foreach ($cacheBins as $id) {
+        $container->register($id, 'Drupal\Core\Cache\NullBackend')
+          ->addArgument(substr($id, strpos($id, '.') + 1))
+          ->addTag('cache.bin', ['default_backend' => 'mix.cache.backend.null']);
+      }
     }
   }
 
@@ -44,27 +49,14 @@ class MixServiceProvider extends ServiceProviderBase {
 
     // Only alter services when dev_mode is enabled.
     if ($this->isDevMode) {
-
       // Enable cacheability headers debug.
       $container->setParameter('http.response.debug_cacheability_headers', TRUE);
-
       // Enable twig debug.
       $twig_config = $container->getParameter('twig.config');
       $twig_config['debug'] = TRUE;
       $twig_config['auto_reload'] = TRUE;
       $twig_config['cache'] = FALSE;
       $container->setParameter('twig.config', $twig_config);
-
-      // Disable cache bins by changed cache backend to NullBackendFactory.
-      $ids = ['cache.render', 'cache.page', 'cache.dynamic_page_cache'];
-      foreach ($ids as $id) {
-        if ($container->hasDefinition($id)) {
-          $definition = $container->getDefinition($id);
-          $definition->setClass('Drupal\mix\Cache\NullBackendFactory');
-          $definition->addTag('cache.bin', ['default_backend' => 'mix.cache.backend.null']);
-        }
-      }
-
     }
 
   }
