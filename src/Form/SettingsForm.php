@@ -92,7 +92,7 @@ class SettingsForm extends ConfigFormBase {
     $form['remove_x_generator'] = [
       '#title' => $this->t('Remove X-Generator'),
       '#type' => 'checkbox',
-      '#description' => $this->t('Remove HTTP header "X-Generator" and meta @meta to obfuscate that your website is running on Drupal', ['@meta' => '<meta name="Generator" content="Drupal 10 (https://www.drupal.org)">']),
+      '#description' => $this->t('Remove HTTP header "X-Generator" and meta @meta to obfuscate that your website is running on Drupal.', ['@meta' => '<meta name="Generator" content="Drupal 10 (https://www.drupal.org)">']),
       '#default_value' => $config->get('remove_x_generator'),
     ];
 
@@ -118,14 +118,10 @@ class SettingsForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, FormStateInterface $form_state) {
-    parent::validateForm($form, $form_state);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function submitForm(array &$form, FormStateInterface $form_state) {
+
+    $rebuildCache = FALSE;
+    $rebuildContainer = FALSE;
 
     // Get configurations.
     $config = $this->config('mix.settings');
@@ -141,17 +137,35 @@ class SettingsForm extends ConfigFormBase {
       ->save();
 
     // Save state value and invalidate caches when this config changes.
+    $oldEnvironmentIndicator = \Drupal::state()->get('mix.environment_indicator');
     $newEnvironmentIndicator = $form_state->getValue('environment_indicator');
-    if (\Drupal::state()->get('mix.environment_indicator') != $newEnvironmentIndicator) {
+    if ($oldEnvironmentIndicator != $newEnvironmentIndicator) {
       \Drupal::state()->set('mix.environment_indicator', $newEnvironmentIndicator);
-      Cache::invalidateTags(['mix:environment-indicator']);
+      // Rebuild all caches if the new value or the old value is empty.
+      if (empty($oldEnvironmentIndicator) || empty($newEnvironmentIndicator)) {
+        $rebuildCache = TRUE;
+      }
+      // Only invalidate cache tags when change between non-empty values
+      // for better performance.
+      else {
+        Cache::invalidateTags(['mix:environment-indicator']);
+      }
     }
 
     // Only run this when dev_mode has changed.
     $devModeChanged = $form_state->getValue('dev_mode') != $originDevMode;
     if ($devModeChanged) {
-      // Clear cache to rebulid service providers and configurations based on dev_mode.
+      // Clear cache to rebulid service providers and configurations
+      // based on dev_mode.
+      $rebuildCache = TRUE;
+      $rebuildContainer = TRUE;
+    }
+
+    if ($rebuildCache) {
       drupal_flush_all_caches();
+    }
+
+    if ($rebuildContainer) {
       \Drupal::service('kernel')->rebuildContainer();
     }
 
