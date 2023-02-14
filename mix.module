@@ -6,6 +6,7 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_form_alter().
@@ -23,13 +24,24 @@ function mix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
  * Implements hook_page_top().
  */
 function mix_page_top(array &$page_top) {
-  $environmentIndicator = \Drupal::state()->get('mix.environment_indicator');
-  if ($environmentIndicator) {
+
+  $text = \Drupal::state()->get('mix.environment_indicator');
+
+  if ($text) {
+
+    // Add an edit link if user has permission.
+    $editLink = '';
+    if (\Drupal::currentUser()->hasPermission('administer site configuration')) {
+      $url = new Url('mix.settings', [], ['fragment' => 'edit-environment-indicator']);
+      $editLink = \Drupal::linkGenerator()->generate(t('Edit'), $url);
+    }
+
     $page_top['mix_environment_indicator'] = [
       '#type' => 'inline_template',
-      '#template' => '<div id="mix-environment-indicator" style="color: #fff; background: orange; text-align: center;">{{ env }}</div>',
+      '#template' => '<div id="mix-environment-indicator" style="color: #fff; background: orange; text-align: center;">{{ text }} {{ edit_link }}</div>',
       '#context' => [
-        'env' => $environmentIndicator,
+        'text' => $text,
+        'edit_link' => $editLink,
       ],
       '#cache' => [
         'tags' => [
@@ -38,6 +50,7 @@ function mix_page_top(array &$page_top) {
       ],
     ];
   }
+
 }
 
 /**
