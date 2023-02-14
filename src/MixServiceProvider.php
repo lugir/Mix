@@ -12,10 +12,29 @@ use Drupal\Core\DependencyInjection\ServiceProviderBase;
 class MixServiceProvider extends ServiceProviderBase {
 
   /**
+   * Whether the dev_mode has been enabled.
+   *
+   * @var bool
+   */
+  protected $isDevMode;
+
+  /**
+   * Construct mix service provider.
+   */
+  public function __construct() {
+    $configStorage = BootstrapConfigStorageFactory::get();
+    $mixSettings = $configStorage->read('mix.settings');
+    $this->isDevMode = isset($mixSettings['dev_mode']) && $mixSettings['dev_mode'];
+  }
+
+  /**
    * {@inheritdoc}
    */
   public function register(ContainerBuilder $container) {
-    $container->register('cache.render', 'Drupal\mix\Cache\NullBackendFactory');
+    // Only override services when dev_mode is enabled.
+    if ($this->isDevMode) {
+      $container->register('cache.render', 'Drupal\mix\Cache\NullBackendFactory');
+    }
   }
 
   /**
@@ -23,12 +42,8 @@ class MixServiceProvider extends ServiceProviderBase {
    */
   public function alter(ContainerBuilder $container) {
 
-    // Get config.
-    $configStorage = BootstrapConfigStorageFactory::get();
-    $mixSettings = $configStorage->read('mix.settings');
-
     // Only alter services when dev_mode is enabled.
-    if (isset($mixSettings['dev_mode']) && $mixSettings['dev_mode']) {
+    if ($this->isDevMode) {
 
       // Enable cacheability headers debug.
       $container->setParameter('http.response.debug_cacheability_headers', TRUE);
