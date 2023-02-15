@@ -3,13 +3,31 @@
 namespace Drupal\mix\Config;
 
 use Drupal\Core\Cache\CacheableMetadata;
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Config\ConfigFactoryOverrideInterface;
 use Drupal\Core\Config\StorageInterface;
 
 /**
  * Example configuration override.
  */
-class ConfigOverride implements ConfigFactoryOverrideInterface {
+class ConfigOverrider implements ConfigFactoryOverrideInterface {
+
+  /**
+   * The config factory service.
+   *
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
+   */
+  protected $configFactory;
+
+  /**
+   * Constructs a ConfigOverrider object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The config factory service.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory) {
+    $this->configFactory = $config_factory;
+  }
 
   /**
    * {@inheritdoc}
@@ -18,7 +36,7 @@ class ConfigOverride implements ConfigFactoryOverrideInterface {
     $overrides = [];
 
     // Only override configs in development mode is enabled.
-    $devMode = \Drupal::configFactory()->getEditable('mix.settings')->getOriginal('dev_mode', FALSE);
+    $devMode = $this->configFactory->getEditable('mix.settings')->getOriginal('dev_mode', FALSE);
     if (!$devMode) {
       return $overrides;
     }
@@ -56,7 +74,7 @@ class ConfigOverride implements ConfigFactoryOverrideInterface {
    * {@inheritdoc}
    */
   public function getCacheSuffix() {
-    return 'ConfigOverride';
+    return 'ConfigOverrider';
   }
 
   /**

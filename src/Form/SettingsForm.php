@@ -3,13 +3,70 @@
 namespace Drupal\mix\Form;
 
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\DrupalKernelInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\UrlGeneratorInterface;
+use Drupal\Core\State\StateInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Configure Mix settings for this site.
  */
 class SettingsForm extends ConfigFormBase {
+
+  /**
+   * The URL generator.
+   *
+   * @var \Drupal\Core\Routing\UrlGeneratorInterface
+   */
+  protected $urlGenerator;
+
+  /**
+   * Stores the state storage service.
+   *
+   * @var \Drupal\Core\State\StateInterface
+   */
+  protected $state;
+
+  /**
+   * The drupal kernel.
+   *
+   * @var \Drupal\Core\DrupalKernelInterface
+   */
+  protected $kernel;
+
+  /**
+   * Constructs a Drupal\mix\Form\SettingsForm object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The factory for configuration objects.
+   * @param \Drupal\Core\Routing\UrlGeneratorInterface $url_generator
+   *   The url generator.
+   * @param \Drupal\Core\State\StateInterface $state
+   *   The state key value store.
+   * @param \Drupal\Core\DrupalKernelInterface $kernel
+   *   The drupal kernel.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, UrlGeneratorInterface $url_generator, StateInterface $state, DrupalKernelInterface $kernel) {
+    $this->setConfigFactory($config_factory);
+    $this->urlGenerator = $url_generator;
+    $this->state = $state;
+    $this->kernel = $kernel;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('url_generator'),
+      $container->get('state'),
+      $container->get('kernel')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -84,8 +141,8 @@ class SettingsForm extends ConfigFormBase {
           </table>
         </details>',
       '#context' => [
-        'performanceSettingsUrl' => \Drupal::urlGenerator()->generateFromRoute('system.performance_settings', [], ['fragment' => 'edit-caching']),
-        'errorMessageSettingsUrl' => \Drupal::urlGenerator()->generateFromRoute('system.logging_settings'),
+        'performanceSettingsUrl' => $this->urlGenerator->generateFromRoute('system.performance_settings', [], ['fragment' => 'edit-caching']),
+        'errorMessageSettingsUrl' => $this->urlGenerator->generateFromRoute('system.logging_settings'),
       ],
     ];
 
@@ -109,7 +166,7 @@ class SettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
         <br>Leave it blank in the Live environment or hide the indicator.'),
-      '#default_value' => \Drupal::state()->get('mix.environment_indicator'),
+      '#default_value' => $this->state->get('mix.environment_indicator'),
     ];
 
     return parent::buildForm($form, $form_state);
@@ -137,10 +194,10 @@ class SettingsForm extends ConfigFormBase {
       ->save();
 
     // Save state value and invalidate caches when this config changes.
-    $oldEnvironmentIndicator = \Drupal::state()->get('mix.environment_indicator');
+    $oldEnvironmentIndicator = $this->state->get('mix.environment_indicator');
     $newEnvironmentIndicator = $form_state->getValue('environment_indicator');
     if ($oldEnvironmentIndicator != $newEnvironmentIndicator) {
-      \Drupal::state()->set('mix.environment_indicator', $newEnvironmentIndicator);
+      $this->state->set('mix.environment_indicator', $newEnvironmentIndicator);
       // Rebuild all caches if the new value or the old value is empty.
       if (empty($oldEnvironmentIndicator) || empty($newEnvironmentIndicator)) {
         $rebuildCache = TRUE;
@@ -166,7 +223,7 @@ class SettingsForm extends ConfigFormBase {
     }
 
     if ($rebuildContainer) {
-      \Drupal::service('kernel')->rebuildContainer();
+      $this->kernel->rebuildContainer();
     }
 
     parent::submitForm($form, $form_state);

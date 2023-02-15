@@ -1,12 +1,13 @@
 services:
   mix.event_subscriber:
     class: Drupal\mix\EventSubscriber\MixSubscriber
-    arguments: ['@current_user']
+    arguments: ['@config.factory', '@current_user', '@url_generator', '@messenger', '@page_cache_kill_switch']
     tags:
       - { name: event_subscriber }
   mix.config_overrider:
-    class: Drupal\mix\Config\ConfigOverride
+    class: Drupal\mix\Config\ConfigOverrider
     tags:
       - { name: config.factory.override, priority: 5 }
+    arguments: ['@config.factory']
   mix.cache.backend.null:
     class: Drupal\mix\Cache\NullBackendFactory
