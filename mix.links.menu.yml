@@ -1,6 +1,5 @@
 mix.settings:
-  title: Mix
+  title: Mix settings
   route_name: mix.settings
   parent: system.admin_config
-  description: Mix Settings
   weight: 10
