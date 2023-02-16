@@ -17,7 +17,7 @@ function mix_help($route_name, RouteMatchInterface $route_match) {
     case 'help.page.mix':
       $output = '';
       $output .= '<h3>' . t('About') . '</h3>';
-      $output .= '<p>' . t('Mix is a collection of features for Drupal site building, management, development and user experience improving. For more information, see the <a href=":url">online project page for the Mix module</a>.', [':url' => 'https://www.drupal.org/project/mix']) . '</p>';
+      $output .= '<p>' . t('Mix is a collection of features for Drupal site building, management, development and user experience improvement. For more information, see the <a href=":url">online project page for the Mix module</a>.', [':url' => 'https://www.drupal.org/project/mix']) . '</p>';
       return $output;
   }
 }

@@ -1,7 +1,7 @@
 ## Introduction
 
 Mix is a collection of features for Drupal site building, management,
-development and user experience improving.
+development and user experience improvement.
 
 **The main goals of Mix module includes**:
 - Provide simple but useful features that every Drupal project could use but
