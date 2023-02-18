@@ -55,7 +55,14 @@ class MixServiceProvider extends ServiceProviderBase {
       $twig_config = $container->getParameter('twig.config');
       $twig_config['debug'] = TRUE;
       $twig_config['auto_reload'] = TRUE;
-      $twig_config['cache'] = FALSE;
+
+      // Set `cache` to false will disable Twig template compilation.
+      // However, this is not recommended; not even in the dev environment.
+      // The `auto_reload` option ensures that cached templates
+      // which have changed get compiled again.
+      // So we stop set `cache` to FALSE here.
+      // @see https://symfony.com/doc/current/reference/configuration/twig.html#cache
+      // $twig_config['cache'] = FALSE;
       $container->setParameter('twig.config', $twig_config);
     }
 
