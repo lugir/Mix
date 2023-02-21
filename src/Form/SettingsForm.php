@@ -220,7 +220,6 @@ class SettingsForm extends ConfigFormBase {
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))
-      ->set('error_page.path', $form_state->getValue('error_page_path'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
       ->save();
 
