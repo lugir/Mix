@@ -15,3 +15,13 @@ mix.settings:
       type: boolean
       label: 'Remove X-Generator'
       translatable: true
+    error_page:
+      type: mapping
+      label: 'Error page settings'
+      mapping:
+        mode:
+          type: boolean
+          label: 'Enable custom error page'
+        content:
+          type: string
+          label: 'Error page content'

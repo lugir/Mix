@@ -169,6 +169,34 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $this->state->get('mix.environment_indicator'),
     ];
 
+    $form['error_pages'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Error pages'),
+      '#open' => TRUE,
+    ];
+
+    $errorPageDesc = $this->t('Use custom content replace the default 500 (internal server error) page.') . '<br>';
+    $errorPageDesc .= '<a href="' . $this->urlGenerator->generateFromRoute('mix.site_500') . '" target="_blank">' . $this->t('View current error page.') . '</a>';
+    $form['error_pages']['error_page'] = [
+      '#title' => $this->t('Enable custom error page'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('error_page.mode'),
+      '#description' => $errorPageDesc,
+    ];
+
+    $form['error_pages']['error_page_content'] = [
+      '#title' => $this->t('Error page content'),
+      '#type' => 'textarea',
+      '#default_value' => $config->get('error_page.content'),
+      '#description' => $this->t('Custom content or HTML code of the error page.'),
+      '#rows' => 26,
+      '#states' => [
+        'visible' => [
+          ':input[name="error_page"]' => ['checked' => TRUE],
+        ],
+      ],
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 
@@ -191,6 +219,9 @@ class SettingsForm extends ConfigFormBase {
       ->set('dev_mode', $form_state->getValue('dev_mode'))
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
+      ->set('error_page.mode', $form_state->getValue('error_page'))
+      ->set('error_page.path', $form_state->getValue('error_page_path'))
+      ->set('error_page.content', $form_state->getValue('error_page_content'))
       ->save();
 
     // Save state value and invalidate caches when this config changes.
