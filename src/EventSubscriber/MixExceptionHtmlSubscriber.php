@@ -37,7 +37,6 @@ class MixExceptionHtmlSubscriber extends FinalExceptionSubscriber {
    */
   public function onException(ExceptionEvent $event) {
 
-
     if (!$this->configFactory->get('mix.settings')->get('error_page.mode')) {
       parent::onException($event);
       return;
@@ -62,7 +61,6 @@ class MixExceptionHtmlSubscriber extends FinalExceptionSubscriber {
 
       if (!$this->isErrorLevelVerbose()) {
         // Without verbose logging, use a simple message.
-
         // We use \Drupal\Component\Render\FormattableMarkup directly here,
         // rather than use t() since we are in the middle of error handling, and
         // we don't want t() to cause further errors.
@@ -70,7 +68,6 @@ class MixExceptionHtmlSubscriber extends FinalExceptionSubscriber {
       }
       else {
         // With verbose logging, we will also include a backtrace.
-
         $backtrace_exception = $exception;
         while ($backtrace_exception->getPrevious()) {
           $backtrace_exception = $backtrace_exception->getPrevious();
