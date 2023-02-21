@@ -70,12 +70,15 @@ class MixTest extends NodeTestBase {
     $this->assertSession()->fieldExists('Remove X-Generator');
     $this->assertSession()->fieldExists('Hide revision field');
     $this->assertSession()->fieldExists('Environment Indicator');
+    $this->assertSession()->fieldExists('Enable custom error page');
+    $this->assertSession()->fieldExists('Error page content');
 
     // Assert default values.
     $this->assertSession()->fieldValueEquals('edit-dev-mode', FALSE);
     $this->assertSession()->fieldValueEquals('edit-remove-x-generator', FALSE);
     $this->assertSession()->fieldValueEquals('edit-hide-revision-field', FALSE);
     $this->assertSession()->fieldValueEquals('edit-environment-indicator', '');
+    $this->assertSession()->fieldValueEquals('edit-error-page', FALSE);
 
     // Submit form.
     $edit = [];
@@ -84,6 +87,8 @@ class MixTest extends NodeTestBase {
     $edit['remove_x_generator']    = TRUE;
     $edit['hide_revision_field']   = TRUE;
     $edit['environment_indicator'] = 'Development Environment';
+    $edit['error_page']            = TRUE;
+    $edit['error_page_content']    = 'Sorry! Something is wrong...';
 
     $this->submitForm($edit, 'Save configuration');
     $this->assertSession()->statusCodeEquals(200);
@@ -93,6 +98,8 @@ class MixTest extends NodeTestBase {
     $this->assertSession()->fieldValueEquals('edit-remove-x-generator', TRUE);
     $this->assertSession()->fieldValueEquals('edit-hide-revision-field', TRUE);
     $this->assertSession()->fieldValueEquals('edit-environment-indicator', 'Development Environment');
+    $this->assertSession()->fieldValueEquals('edit-error-page', TRUE);
+    $this->assertSession()->fieldValueEquals('edit-error-page-content', 'Sorry! Something is wrong...');
 
   }
 
