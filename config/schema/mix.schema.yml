@@ -6,15 +6,12 @@ mix.settings:
     hide_revision_field:
       type: boolean
       label: 'Hide revision field'
-      translatable: true
     dev_mode:
       type: boolean
       label: 'Enable development mode'
-      translatable: true
     remove_x_generator:
       type: boolean
       label: 'Remove X-Generator'
-      translatable: true
     error_page:
       type: mapping
       label: 'Error page settings'
