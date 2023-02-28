@@ -170,7 +170,7 @@ class SettingsForm extends ConfigFormBase {
     $form['dev']['show_form_id'] = [
       '#title' => $this->t('Show form ID'),
       '#type' => 'checkbox',
-      '#description' => $this->t('Show form ID and form alter function template before forms to make form altering easier.'),
+      '#description' => $this->t('Show form ID and form alter function (<a href="https://api.drupal.org/hook_form_FORM_ID_alter" target="_blank"><code>hook_form_FORM_ID_alter()</code></a>) template before forms to make form altering easier.'),
       '#default_value' => $this->state->get('mix.show_form_id'),
     ];
 
