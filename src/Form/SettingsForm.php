@@ -89,9 +89,15 @@ class SettingsForm extends ConfigFormBase {
 
     $config = $this->config('mix.settings');
 
+    $form['dev'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Development'),
+      '#open' => TRUE,
+    ];
+
     // Check dev mode and give tips.
     $devMode = $config->get('dev_mode');
-    $form['dev_mode'] = [
+    $form['dev']['dev_mode'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enable development mode'),
       '#description' => $this->t('Quick switch between Dev/Prod modes to make module and theme develpment way more easier.'),
@@ -99,7 +105,7 @@ class SettingsForm extends ConfigFormBase {
     ];
 
     // Help content for dev_mode configuration.
-    $form['dev_mode_help'] = [
+    $form['dev']['dev_mode_help'] = [
       '#type' => 'inline_template',
       '#template' => '<details>
         <summary>{% trans %}Dev mode vs. Prod mode{% endtrans %}</summary>
@@ -160,20 +166,21 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('hide_revision_field'),
     ];
 
+    // Show form ID.
+    $form['dev']['show_form_id'] = [
+      '#title' => $this->t('Show form ID'),
+      '#type' => 'checkbox',
+      '#description' => $this->t('Show form ID and form alter function template before forms to make form altering easier.'),
+      '#default_value' => $this->state->get('mix.show_form_id'),
+    ];
+
     // Environment indicator.
-    $form['environment_indicator'] = [
+    $form['dev']['environment_indicator'] = [
       '#title' => $this->t('Environment Indicator'),
       '#type' => 'textfield',
       '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
         <br>Leave it blank in the Live environment or hide the indicator.'),
       '#default_value' => $this->state->get('mix.environment_indicator'),
-    ];
-
-    $form['show_form_id'] = [
-      '#title' => $this->t('Show form ID'),
-      '#type' => 'checkbox',
-      '#description' => $this->t('Show form ID and form alter function template before forms to make form altering easier.'),
-      '#default_value' => $this->state->get('mix.show_form_id'),
     ];
 
     $form['error_pages'] = [
