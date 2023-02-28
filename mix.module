@@ -26,6 +26,32 @@ function mix_help($route_name, RouteMatchInterface $route_match) {
  * Implements hook_form_alter().
  */
 function mix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Show form id.
+  if (\Drupal::state()->get('mix.show_form_id')) {
+    $form['mix_show_form_id'] = [
+      '#type' => 'inline_template',
+      '#template' => '<div class="mix-box mix-warning mix-full-width">
+Form ID: <code>{{ form_id }}</code><br>
+Copy/paste following template to [yourmodule].module file to alter this form (Replace <code>hook_</code> with <code>[yourmodule]_</code>): <br>
+<textarea class="mix-code" rows="6" style="width: 100%; min-width: 280px;">
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+}
+</textarea><br>
+@see <a href="https://api.drupal.org/hook_form_FORM_ID_alter" target="_blank">hook_form_FORM_ID_alter()</a>
+</div>',
+      '#context' => [
+        'form_id' => $form_id,
+      ],
+      '#weight' => -1000,
+    ];
+
+    $form['mix_show_form_id']['#attached']['library'][] = 'mix/preset';
+  }
+
   // Hide revision field.
   $currentUser = \Drupal::currentUser();
   $hideRevisionField = \Drupal::config('mix.settings')->get('hide_revision_field');

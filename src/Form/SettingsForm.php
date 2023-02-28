@@ -169,6 +169,13 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $this->state->get('mix.environment_indicator'),
     ];
 
+    $form['show_form_id'] = [
+      '#title' => $this->t('Show form ID'),
+      '#type' => 'checkbox',
+      '#description' => $this->t('Show form ID and form alter function template before forms to make form altering easier.'),
+      '#default_value' => $this->state->get('mix.show_form_id'),
+    ];
+
     $form['error_pages'] = [
       '#type' => 'details',
       '#title' => $this->t('Error pages'),
@@ -222,6 +229,13 @@ class SettingsForm extends ConfigFormBase {
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
       ->save();
+
+    $oldShowFormId = $this->state->get('mix.show_form_id');
+    $newShowFormId = $form_state->getValue('show_form_id');
+    if ($oldShowFormId != $newShowFormId) {
+      $this->state->set('mix.show_form_id', $form_state->getValue('show_form_id'));
+      $rebuildCache = TRUE;
+    }
 
     // Save state value and invalidate caches when this config changes.
     $oldEnvironmentIndicator = $this->state->get('mix.environment_indicator');
