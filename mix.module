@@ -38,7 +38,7 @@ Copy/paste following template to [yourmodule].module file to alter this form (Re
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
 }
 </textarea><br>
 @see <a href="https://api.drupal.org/hook_form_FORM_ID_alter" target="_blank">hook_form_FORM_ID_alter()</a>
