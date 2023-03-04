@@ -12,6 +12,14 @@ mix.settings:
     remove_x_generator:
       type: boolean
       label: 'Remove X-Generator'
+    show_content_sync_id:
+      type: boolean
+      label: 'Show content sync ID'
+    content_sync_ids:
+      type: sequence
+      label: 'List of content configuration names'
+      sequence:
+        type: string
     error_page:
       type: mapping
       label: 'Error page settings'

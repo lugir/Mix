@@ -170,7 +170,7 @@ class SettingsForm extends ConfigFormBase {
     $form['dev']['show_form_id'] = [
       '#title' => $this->t('Show form ID'),
       '#type' => 'checkbox',
-      '#description' => $this->t('Show form ID and form alter function (<a href="https://api.drupal.org/hook_form_FORM_ID_alter" target="_blank"><code>hook_form_FORM_ID_alter()</code></a>) template before forms to make form altering easier.'),
+      '#description' => $this->t('Show the form ID and form alter function (<a href="https://api.drupal.org/hook_form_FORM_ID_alter" target="_blank"><code>hook_form_FORM_ID_alter()</code></a>) template before a form to make form altering easier.'),
       '#default_value' => $this->state->get('mix.show_form_id'),
     ];
 
@@ -181,6 +181,30 @@ class SettingsForm extends ConfigFormBase {
       '#description' => $this->t('Add a simple text (e.g. Development/Dev/Stage/Test or any other text) on the top of this site to help you identify current environment.
         <br>Leave it blank in the Live environment or hide the indicator.'),
       '#default_value' => $this->state->get('mix.environment_indicator'),
+    ];
+
+    $form['content_sync'] = [
+      '#title' => $this->t('Content synchronize') . '<sup>' . $this->t('(Beta)') . '</sup>',
+      '#type' => 'details',
+      '#description' => $this->t('By default, Drupal only synchronizes configurations between environments, not content.<br>
+When use it to synchronize a block, the block content will not be synchronized, and you will get an error message "This block is broken or missing."<br>
+With this "Content Synchronize", we can sync selected content (blocks, menu links, taxonomy terms, etc.) between environments.<br>
+Use <code>drush cex</code> to export content and <code>drush cim</code> to import.<br>
+Note: To avoid unexpected overrides, content will only be created if it does not exist. Existing content will not be updated.'),
+    ];
+
+    $form['content_sync']['show_content_sync_id'] = [
+      '#title' => $this->t('Show content sync ID'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('show_content_sync_id'),
+      '#description' => $this->t('Show the content sync ID in content (blocks, menu links, taxonomy terms, etc.) management pages'),
+    ];
+
+    $form['content_sync']['content_sync_ids'] = [
+      '#title' => $this->t('Content sync IDs'),
+      '#type' => 'textarea',
+      '#description' => $this->t('One content sync ID per line.'),
+      '#default_value' => implode(PHP_EOL, $config->get('content_sync_ids')),
     ];
 
     $form['error_pages'] = [
@@ -228,6 +252,11 @@ class SettingsForm extends ConfigFormBase {
     // Get original dev_mode value, use to compare if changes later.
     $originDevMode = $config->get('dev_mode');
 
+    // Convert content_sync value into array.
+    $content_sync_array = array_map('trim', explode(PHP_EOL, $form_state->getValue('content_sync_ids')));
+    $content_sync_array = array_unique(array_filter($content_sync_array));
+    sort($content_sync_array);
+
     // Save config.
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
@@ -235,7 +264,12 @@ class SettingsForm extends ConfigFormBase {
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
+      ->set('show_content_sync_id', $form_state->getValue('show_content_sync_id'))
+      ->set('content_sync_ids', $content_sync_array)
       ->save();
+
+    // @todo Clear related caches when the setting of "Show content sync ID"
+    // is changed.
 
     $oldShowFormId = $this->state->get('mix.show_form_id');
     $newShowFormId = $form_state->getValue('show_form_id');

@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_help().
@@ -105,3 +106,71 @@ function mix_page_attachments_alter(array &$attachments): void {
     }
   }
 }
+
+/**
+ * Implements hook_perprocess_views_view_field().
+ */
+function mix_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  if (\Drupal::config('mix.settings')->get('show_content_sync_id')) {
+    // Add content sync id under block title.
+    if ($view->id() == 'block_content' && $view->current_display == 'page_1' && $field->options['id'] == 'info') {
+      $markup = $variables['output'] . '<div class="form-item__description">' . $variables['row']->content_sync_id . '</div>';
+      $variables['output'] = ['#markup' => $markup];
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function mix_views_pre_render(ViewExecutable $view) {
+
+  if (\Drupal::config('mix.settings')->get('show_content_sync_id')) {
+    // Add the content sync ID to the "Custom block library" view.
+    if ($view->id() == 'block_content' && $view->current_display == 'page_1') {
+      foreach ($view->result as $key => $row) {
+        $entity = $row->_entity;
+        $content_sync_id = $entity->getEntityTypeId() . '.' . $entity->bundle() . '.' . $entity->uuid();
+        $view->result[$key]->content_sync_id = $content_sync_id;
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mix_form_menu_edit_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Add the content sync ID to the menu edit form.
+  if (\Drupal::config('mix.settings')->get('show_content_sync_id')) {
+    foreach ($form['links']['links'] as $key => $link) {
+      if (strpos($key, 'menu_plugin_id:menu_link_content:') === 0) {
+        if (isset($link['title'][1])) {
+          $form['links']['links'][$key]['title'][1]['#suffix'] = '<div class="form-item__description">' . str_replace(':', '.', $link['id']['#value']) . '</div>';
+        }
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mix_form_taxonomy_overview_terms_alter(&$form, FormStateInterface $form_state, $form_id) {
+  //dump($form);
+  // Add the content sync ID to the taxonomy_overview_terms form.
+  if (\Drupal::config('mix.settings')->get('show_content_sync_id')) {
+    foreach ($form['terms'] as $key => $link) {
+      if (strpos($key, 'tid:') === 0) {
+        $form['terms'][$key]['term']['#suffix'] = '<div class="form-item__description">taxonomy.term.' . $link['#term']->uuid() . '</div>';
+      }
+    }
+  }
+}
+

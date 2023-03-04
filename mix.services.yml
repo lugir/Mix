@@ -9,10 +9,15 @@ services:
     arguments: ['@config.factory']
     tags:
       - { name: event_subscriber }
+  mix.content_sync_subscriber:
+    class: Drupal\mix\EventSubscriber\MixContentSyncSubscriber
+    arguments: ['@serializer']
+    tags:
+      - { name: event_subscriber }
   mix.config_overrider:
     class: Drupal\mix\Config\ConfigOverrider
+    arguments: ['@config.factory']
     tags:
       - { name: config.factory.override, priority: 5 }
-    arguments: ['@config.factory']
   mix.cache.backend.null:
     class: Drupal\mix\Cache\NullBackendFactory
