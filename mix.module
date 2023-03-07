@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\mix\Controller\MixContentSyncController;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -134,7 +135,7 @@ function mix_views_pre_render(ViewExecutable $view) {
       foreach ($view->result as $key => $row) {
         $entity = $row->_entity;
         $content_sync_id = $entity->getEntityTypeId() . '.' . $entity->bundle() . '.' . $entity->uuid();
-        $view->result[$key]->content_sync_id = $content_sync_id;
+        $view->result[$key]->content_sync_id = $content_sync_id . ' ' . MixContentSyncController::getAjaxLink($content_sync_id);
       }
     }
   }
@@ -151,7 +152,8 @@ function mix_form_menu_edit_form_alter(&$form, FormStateInterface $form_state, $
     foreach ($form['links']['links'] as $key => $link) {
       if (strpos($key, 'menu_plugin_id:menu_link_content:') === 0) {
         if (isset($link['title'][1])) {
-          $form['links']['links'][$key]['title'][1]['#suffix'] = '<div class="form-item__description">' . str_replace(':', '.', $link['id']['#value']) . '</div>';
+          $content_sync_id = str_replace(':', '.', $link['id']['#value']);
+          $form['links']['links'][$key]['title'][1]['#suffix'] = '<div class="form-item__description">' . $content_sync_id . ' ' . MixContentSyncController::getAjaxLink($content_sync_id) . '</div>';
         }
       }
     }
@@ -163,14 +165,13 @@ function mix_form_menu_edit_form_alter(&$form, FormStateInterface $form_state, $
  * Implements hook_form_FORM_ID_alter().
  */
 function mix_form_taxonomy_overview_terms_alter(&$form, FormStateInterface $form_state, $form_id) {
-  //dump($form);
   // Add the content sync ID to the taxonomy_overview_terms form.
   if (\Drupal::config('mix.settings')->get('show_content_sync_id')) {
     foreach ($form['terms'] as $key => $link) {
       if (strpos($key, 'tid:') === 0) {
-        $form['terms'][$key]['term']['#suffix'] = '<div class="form-item__description">taxonomy.term.' . $link['#term']->uuid() . '</div>';
+        $content_sync_id = 'taxonomy.term.' . $link['#term']->uuid();
+        $form['terms'][$key]['term']['#suffix'] = '<div class="form-item__description">' . $content_sync_id . ' ' . MixContentSyncController::getAjaxLink($content_sync_id) . '</div>';
       }
     }
   }
 }
-
