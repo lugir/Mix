@@ -9,7 +9,11 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\State\StateInterface;
+use Drupal\mix\Controller\MixContentSyncController;
+use Drupal\mix\EventSubscriber\MixContentSyncSubscriber;
+use InvalidArgumentException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Configure Mix settings for this site.
@@ -38,6 +42,13 @@ class SettingsForm extends ConfigFormBase {
   protected $kernel;
 
   /**
+   * The serializer.
+   *
+   * @var \Symfony\Component\Serializer\SerializerInterface
+   */
+  protected $serializer;
+
+  /**
    * Constructs a Drupal\mix\Form\SettingsForm object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -48,12 +59,15 @@ class SettingsForm extends ConfigFormBase {
    *   The state key value store.
    * @param \Drupal\Core\DrupalKernelInterface $kernel
    *   The drupal kernel.
+   * @param \Symfony\Component\Serializer\SerializerInterface $serializer
+   *   The serializer.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, UrlGeneratorInterface $url_generator, StateInterface $state, DrupalKernelInterface $kernel) {
+  public function __construct(ConfigFactoryInterface $config_factory, UrlGeneratorInterface $url_generator, StateInterface $state, DrupalKernelInterface $kernel, SerializerInterface $serializer) {
     $this->setConfigFactory($config_factory);
     $this->urlGenerator = $url_generator;
     $this->state = $state;
     $this->kernel = $kernel;
+    $this->serializer = $serializer;
   }
 
   /**
@@ -64,7 +78,8 @@ class SettingsForm extends ConfigFormBase {
       $container->get('config.factory'),
       $container->get('url_generator'),
       $container->get('state'),
-      $container->get('kernel')
+      $container->get('kernel'),
+      $container->get('serializer')
     );
   }
 
@@ -186,11 +201,31 @@ class SettingsForm extends ConfigFormBase {
     $form['content_sync'] = [
       '#title' => $this->t('Content synchronize') . '<sup>' . $this->t('(Beta)') . '</sup>',
       '#type' => 'details',
-      '#description' => $this->t('By default, Drupal only synchronizes configurations between environments, not content.<br>
-When use it to synchronize a block, the block content will not be synchronized, and you will get an error message "This block is broken or missing."<br>
-With this "Content Synchronize", we can sync selected content (blocks, menu links, taxonomy terms, etc.) between environments.<br>
-Use <code>drush cex</code> to export content and <code>drush cim</code> to import.<br>
-Note: To avoid unexpected overrides, content will only be created if it does not exist. Existing content will not be updated.'),
+    ];
+
+    $form['content_sync']['description_container'] = [
+      '#type' => 'details',
+      '#title' => $this->t('User guide'),
+    ];
+
+    $form['content_sync']['description_container']['description'] = [
+      '#markup' => $this->t('By default, Drupal only synchronizes configurations between environments, not content.<br>
+When we synchronize a block, the block content will not be synchronized, and you will get an error message "This block is broken or missing."<br>
+With this "Content Synchronize", we can synchronize selected content (blocks, menu links, taxonomy terms, etc.) between environments.<br>
+<strong>Usage</strong>
+<ul>
+  <li>Enable the "Show content sync ID" below.</li>
+  <li>Go to content list page, copy the content sync ID to the "Content sync IDs" textarea below.</li>
+      <ul>
+        <li>Block - admin/structure/block/block-content</li>
+        <li>Menu links - admin/structure/menu/manage/[menu-name]</li>
+        <li>Taxonomy terms - admin/structure/taxonomy/manage/[taxonomy-name]/overview</li>
+      </ul>
+  <li>Export configurations by Config export page or <code>drush cex</code> from Dev site.</li>
+  <li>Import configurations by Config import page or <code>drush cim</code> to Prod site.</li>
+  <li>Click the "Generate content" button below.</li>
+</ul>
+Note: To avoid unexpected content updates, only non-existent content will be created by now.'),
     ];
 
     $form['content_sync']['show_content_sync_id'] = [
@@ -205,6 +240,13 @@ Note: To avoid unexpected overrides, content will only be created if it does not
       '#type' => 'textarea',
       '#description' => $this->t('One content sync ID per line.'),
       '#default_value' => implode(PHP_EOL, $config->get('content_sync_ids')),
+    ];
+
+    // @todo Disable this button if no content to generate.
+    $form['content_sync']['generate_content'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Generate content'),
+      '#submit' => [[$this, 'generateContentSubmit']],
     ];
 
     $form['error_pages'] = [
@@ -252,10 +294,9 @@ Note: To avoid unexpected overrides, content will only be created if it does not
     // Get original dev_mode value, use to compare if changes later.
     $originDevMode = $config->get('dev_mode');
 
-    // Convert content_sync value into array.
-    $content_sync_array = array_map('trim', explode(PHP_EOL, $form_state->getValue('content_sync_ids')));
-    $content_sync_array = array_unique(array_filter($content_sync_array));
-    sort($content_sync_array);
+    // Normalize content_sync_ids.
+    $content_sync_ids = array_map('trim', explode(PHP_EOL, $form_state->getValue('content_sync_ids')));
+    MixContentSyncController::presave($content_sync_ids);
 
     // Save config.
     $this->config('mix.settings')
@@ -265,12 +306,11 @@ Note: To avoid unexpected overrides, content will only be created if it does not
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
       ->set('show_content_sync_id', $form_state->getValue('show_content_sync_id'))
-      ->set('content_sync_ids', $content_sync_array)
+      ->set('content_sync_ids', $content_sync_ids)
       ->save();
 
     // @todo Clear related caches when the setting of "Show content sync ID"
     // is changed.
-
     $oldShowFormId = $this->state->get('mix.show_form_id');
     $newShowFormId = $form_state->getValue('show_form_id');
     if ($oldShowFormId != $newShowFormId) {
@@ -312,6 +352,67 @@ Note: To avoid unexpected overrides, content will only be created if it does not
     }
 
     parent::submitForm($form, $form_state);
+  }
+
+  /**
+   * Generate content based on imported content-config.
+   *
+   * @param array $form
+   *   An associative array containing the structure of the form.
+   * @param \Drupal\Core\Form\FormStateInterface $form_state
+   *   The current state of the form.
+   */
+  public function generateContentSubmit(array &$form, FormStateInterface $form_state) {
+    $config = $this->config('mix.settings');
+    $content_sync_ids = $config->get('content_sync_ids');
+    $activeStorage = $config->getStorage();
+
+    // Generate non-existent content.
+    $reququeCounter = [];
+    while ($content_sync_ids) {
+      $configName = array_shift($content_sync_ids);
+
+      // Parse entityType.
+      $entityType = MixContentSyncSubscriber::parseEntityType($configName);
+      // Ignore wrong sync ID or unsupported entity types.
+      if (!$entityType || !in_array($entityType, array_keys(MixContentSyncSubscriber::$supportedEntityTypeMap))) {
+        continue;
+      }
+
+      // Initialize counter.
+      $reququeCounter[$configName] = $reququeCounter[$configName] ?? 1;
+      // Ignore generate content which already tried multiple times.
+      // Show an warning message.
+      if ($reququeCounter[$configName] > 5) {
+        $this->messenger()->addWarning($this->t('Failed to generate content: @config_name', ['@config_name' => $configName]));
+        continue;
+      }
+
+      // Load entity.
+      $uuid = substr($configName, strrpos($configName, '.') + 1);
+      $existedEntity = \Drupal::service('entity.repository')->loadEntityByUuid($entityType, $uuid);
+      $contentArray = $activeStorage->read($configName);
+      // Only generate non-existent content.
+      if (!$existedEntity && $contentArray) {
+        try {
+          $entity = $this->serializer->denormalize($contentArray, MixContentSyncSubscriber::$supportedEntityTypeMap[$entityType], 'yaml');
+          $created = $entity->save();
+          if ($created === SAVED_NEW) {
+            $this->messenger()->addStatus($this->t('Content @config_name was generated successfully', ['@config_name' => $configName]));
+          }
+        }
+        catch (InvalidArgumentException $e) {
+          // Handle exception situation that dependency content not exist.
+          if (strpos($e->getMessage(), 'entity found with UUID')) {
+            // Re-queue.
+            array_push($content_sync_ids, $configName);
+            // Requeue counter.
+            $reququeCounter[$configName]++;
+          }
+        }
+      }
+    }
+
   }
 
 }
