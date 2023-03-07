@@ -20,15 +20,22 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
   protected $serializer;
 
   /**
-   * Supported entity types.
+   * Supported entity types and the classes map.
    *
    * @var array
    */
-  protected $supportedEntityTypeMap = [
+  public static $supportedEntityTypeMap = [
     'block_content'     => 'Drupal\block_content\Entity\BlockContent',
     'menu_link_content' => 'Drupal\menu_link_content\Entity\MenuLinkContent',
     'taxonomy_term'     => 'Drupal\taxonomy\Entity\Term',
   ];
+
+  /**
+   * Supported entity types.
+   *
+   * @var array
+   */
+  protected $supportedEntityTypes;
 
   /**
    * Constructs a ResourceResponseSubscriber object.
@@ -38,6 +45,7 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
    */
   public function __construct(SerializerInterface $serializer) {
     $this->serializer = $serializer;
+    $this->supportedEntityTypes = array_keys(self::$supportedEntityTypeMap);
   }
 
   /**
@@ -68,7 +76,7 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
       // Parse entityType.
       $entityType = $this->parseEntityType($configName);
       // Ignore wrong sync ID or unsupported entity types.
-      if (!$entityType || !in_array($entityType, array_keys($this->supportedEntityTypeMap))) {
+      if (!$entityType || !in_array($entityType, $this->supportedEntityTypes)) {
         continue;
       }
       $contentEntity = \Drupal::service('entity.repository')->loadEntityByUuid($entityType, $uuid);
@@ -81,9 +89,6 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
       // IDs after the normalization.
       $array = $this->serializer->normalize($contentEntity);
 
-      // @todo Add configuration dependencies to ensure import order.
-      // Add new method to add "dependencies" key.
-      // $this->addConfigDependency($array);
       // Save normalized content entity into config file.
       $storage->write($configName, $array);
     }
@@ -108,23 +113,11 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
       if (empty($array)) {
         continue;
       }
-      $uuid = substr($configName, strrpos($configName, '.') + 1);
       // Parse entityType.
       $entityType = $this->parseEntityType($configName);
       // Ignore wrong sync ID or unsupported entity types.
-      if (!$entityType || !in_array($entityType, array_keys($this->supportedEntityTypeMap))) {
+      if (!$entityType || !in_array($entityType, $this->supportedEntityTypes)) {
         continue;
-      }
-      // Load entity.
-      $existedEntity = \Drupal::service('entity.repository')->loadEntityByUuid($entityType, $uuid);
-
-      // Only create content when it's not exists.
-      if (!$existedEntity) {
-        // @todo Perform this after `drush cim` has been confirmed.
-        // @todo Provide an UI to update existed content.
-        // @todo Remove config dependence key before the denormalization.
-        $entity = $this->serializer->denormalize($array, $this->supportedEntityTypeMap[$entityType], 'yaml');
-        $entity->save();
       }
 
     }
@@ -133,7 +126,7 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
   /**
    * Parse entity type from config name.
    */
-  private function parseEntityType($configName) {
+  public static function parseEntityType($configName) {
     if (strpos($configName, 'taxonomy.term.') === 0) {
       $entityType = 'taxonomy_term';
     }
