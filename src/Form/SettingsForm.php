@@ -234,11 +234,18 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
       '#description' => $this->t('Show the content sync ID in content (blocks, menu links, taxonomy terms, etc.) management pages'),
     ];
 
-    $form['content_sync']['content_sync_ids'] = [
+    $form['content_sync']['advanced'] = [
+      '#title' => $this->t('Advanced'),
+      '#type' => 'details',
+    ];
+
+    $form['content_sync']['advanced']['content_sync_ids'] = [
       '#title' => $this->t('Content sync IDs'),
       '#type' => 'textarea',
       '#description' => $this->t('One content sync ID per line.'),
       '#default_value' => implode(PHP_EOL, $config->get('content_sync_ids')),
+      '#prefix' => '<div class="form-item__description">' . $this->t('Content Sync ID will be added/removed from the following textarea automatically when you selected/unselected an item to sync in the content list pages (e.g. block, menu link and term list pages). <br>
+You can also edit it manually.') . '</div>',
     ];
 
     // @todo Disable this button if no content to generate.
