@@ -11,7 +11,6 @@ use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\mix\Controller\MixContentSyncController;
 use Drupal\mix\EventSubscriber\MixContentSyncSubscriber;
-use InvalidArgumentException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Serializer\SerializerInterface;
 
@@ -401,7 +400,7 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
             $this->messenger()->addStatus($this->t('Content @config_name was generated successfully', ['@config_name' => $configName]));
           }
         }
-        catch (InvalidArgumentException $e) {
+        catch (\InvalidArgumentException $e) {
           // Handle exception situation that dependency content not exist.
           if (strpos($e->getMessage(), 'entity found with UUID')) {
             // Re-queue.
