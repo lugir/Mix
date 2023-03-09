@@ -249,13 +249,13 @@ You can also edit it manually.') . '</div>',
     ];
 
     // @todo Disable this button if no content to generate.
-    $form['content_sync']['generate_content'] = [
+    $form['content_sync']['content_sync_generate_content'] = [
       '#type' => 'submit',
       '#value' => $this->t('Generate content'),
       '#submit' => [[$this, 'generateContentSubmit']],
     ];
     if (!Mix::isContentSyncEnabled()) {
-      $form['content_sync']['generate_content']['#disabled'] = TRUE;
+      $form['content_sync']['content_sync_generate_content']['#disabled'] = TRUE;
     }
 
     $form['error_pages'] = [
