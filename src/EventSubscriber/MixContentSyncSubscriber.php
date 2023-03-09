@@ -4,8 +4,8 @@ namespace Drupal\mix\EventSubscriber;
 
 use Drupal\Core\Config\ConfigEvents;
 use Drupal\Core\Config\StorageTransformEvent;
+use Drupal\mix\Controller\Mix;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Mix content sync subscriber.
@@ -39,21 +39,27 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
 
   /**
    * Constructs a ResourceResponseSubscriber object.
-   *
-   * @param \Symfony\Component\Serializer\SerializerInterface $serializer
-   *   The serializer.
    */
-  public function __construct(SerializerInterface $serializer) {
-    $this->serializer = $serializer;
-    $this->supportedEntityTypes = array_keys(self::$supportedEntityTypeMap);
+  public function __construct() {
+    // Check dependency status before assign the serializer.
+    // Use \Drupal call instead of dependency injection, so we don't have to
+    // add "Serialization" module as required dependency.
+    if (Mix::isContentSyncEnabled()) {
+      $this->serializer = \Drupal::service('serializer');
+      $this->supportedEntityTypes = array_keys(self::$supportedEntityTypeMap);
+    }
   }
 
   /**
    * {@inheritdoc}
    */
   public static function getSubscribedEvents() {
-    $events[ConfigEvents::STORAGE_TRANSFORM_EXPORT][] = ['onExportTransform'];
-    $events[ConfigEvents::STORAGE_TRANSFORM_IMPORT][] = ['onImportTransform'];
+    $events = [];
+    // Only react to events when the feature is enabled.
+    if (Mix::isContentSyncEnabled()) {
+      $events[ConfigEvents::STORAGE_TRANSFORM_EXPORT][] = ['onExportTransform'];
+      $events[ConfigEvents::STORAGE_TRANSFORM_IMPORT][] = ['onImportTransform'];
+    }
     return $events;
   }
 

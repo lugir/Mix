@@ -9,10 +9,10 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\State\StateInterface;
+use Drupal\mix\Controller\Mix;
 use Drupal\mix\Controller\MixContentSyncController;
 use Drupal\mix\EventSubscriber\MixContentSyncSubscriber;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Configure Mix settings for this site.
@@ -41,13 +41,6 @@ class SettingsForm extends ConfigFormBase {
   protected $kernel;
 
   /**
-   * The serializer.
-   *
-   * @var \Symfony\Component\Serializer\SerializerInterface
-   */
-  protected $serializer;
-
-  /**
    * Constructs a Drupal\mix\Form\SettingsForm object.
    *
    * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
@@ -58,15 +51,12 @@ class SettingsForm extends ConfigFormBase {
    *   The state key value store.
    * @param \Drupal\Core\DrupalKernelInterface $kernel
    *   The drupal kernel.
-   * @param \Symfony\Component\Serializer\SerializerInterface $serializer
-   *   The serializer.
    */
-  public function __construct(ConfigFactoryInterface $config_factory, UrlGeneratorInterface $url_generator, StateInterface $state, DrupalKernelInterface $kernel, SerializerInterface $serializer) {
+  public function __construct(ConfigFactoryInterface $config_factory, UrlGeneratorInterface $url_generator, StateInterface $state, DrupalKernelInterface $kernel) {
     $this->setConfigFactory($config_factory);
     $this->urlGenerator = $url_generator;
     $this->state = $state;
     $this->kernel = $kernel;
-    $this->serializer = $serializer;
   }
 
   /**
@@ -78,7 +68,6 @@ class SettingsForm extends ConfigFormBase {
       $container->get('url_generator'),
       $container->get('state'),
       $container->get('kernel'),
-      $container->get('serializer')
     );
   }
 
@@ -234,6 +223,17 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
       '#description' => $this->t('Show the content sync ID in content (blocks, menu links, taxonomy terms, etc.) management pages'),
     ];
 
+    if (!Mix::isContentSyncReady()) {
+      $moduleListUrl = $this->urlGenerator->generate('system.modules_list');
+      $form['content_sync']['show_content_sync_id']['#prefix'] = '<div class="mix-box mix-warning">' . $this->t('Please check if the core module <a href="@config" target="_blank">Configuration Manager</a> and <a href="@serialization" target="_blank">Serialization</a> were both enabled before you can use Content Sync.', [
+        '@config' => $moduleListUrl . '#module-config',
+        '@serialization' => $moduleListUrl . '#module-serialization',
+      ]) . '</div>';
+      $form['content_sync']['show_content_sync_id']['#attached']['library'][] = 'mix/preset';
+      $form['content_sync']['show_content_sync_id']['#default_value'] = FALSE;
+      $form['content_sync']['show_content_sync_id']['#disabled'] = TRUE;
+    }
+
     $form['content_sync']['advanced'] = [
       '#title' => $this->t('Advanced'),
       '#type' => 'details',
@@ -254,6 +254,9 @@ You can also edit it manually.') . '</div>',
       '#value' => $this->t('Generate content'),
       '#submit' => [[$this, 'generateContentSubmit']],
     ];
+    if (!Mix::isContentSyncEnabled()) {
+      $form['content_sync']['generate_content']['#disabled'] = TRUE;
+    }
 
     $form['error_pages'] = [
       '#type' => 'details',
