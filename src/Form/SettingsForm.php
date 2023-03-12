@@ -404,10 +404,11 @@ You can also edit it manually.') . '</div>',
       // Only generate non-existent content.
       if (!$existedEntity && $contentArray) {
         try {
-          $entity = $this->serializer->denormalize($contentArray, MixContentSyncSubscriber::$supportedEntityTypeMap[$entityType], 'yaml');
+          $serializer = \Drupal::service('serializer');
+          $entity = $serializer->denormalize($contentArray, MixContentSyncSubscriber::$supportedEntityTypeMap[$entityType], 'yaml');
           $created = $entity->save();
           if ($created === SAVED_NEW) {
-            $this->messenger()->addStatus($this->t('Content @config_name was generated successfully', ['@config_name' => $configName]));
+            $this->messenger()->addStatus($this->t('Content @config_name was generated successfully.', ['@config_name' => $configName]));
           }
         }
         catch (\InvalidArgumentException $e) {
@@ -422,6 +423,7 @@ You can also edit it manually.') . '</div>',
       }
     }
 
+    drupal_flush_all_caches();
   }
 
 }
