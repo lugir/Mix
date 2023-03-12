@@ -2,14 +2,15 @@
 
 namespace Drupal\Tests\mix\Functional;
 
-use Drupal\Tests\BrowserTestBase;
+use Drupal\block_content\Entity\BlockContent;
+use Drupal\Tests\block_content\Functional\BlockContentTestBase;
 
 /**
- * Test content sync functions.
+ * Tests content sync of the Mix module.
  *
  * @group mix
  */
-class MixContentSyncTest extends BrowserTestBase {
+class MixContentSyncTest extends BlockContentTestBase {
 
   /**
    * {@inheritdoc}
@@ -19,53 +20,113 @@ class MixContentSyncTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['mix'];
+  protected static $modules = ['config', 'serialization', 'views', 'mix'];
+
+  /**
+   * The submitted block values used by this test.
+   *
+   * @var array
+   */
+  protected $blockValues;
+
+  /**
+   * The contents of the config export tarball, held between test methods.
+   *
+   * @var string
+   */
+  protected $tarball;
 
   /**
    * {@inheritdoc}
    */
   protected function setUp(): void {
     parent::setUp();
+
+    $this->drupalLogin($this->rootUser);
+
+    // Create block types programmatically.
+    $this->createBlockContentType('other', TRUE);
   }
 
   /**
    * Test callback.
    */
-  public function testContentSync() {
-    // Login as an admin.
-    $admin_user = $this->drupalCreateUser(['administer site configuration']);
-    $this->drupalLogin($admin_user);
-    $this->drupalGet('admin/config/mix');
+  public function testContentSyncBlock() {
 
-    // Assert warning message and disabled fields.
-    $this->assertSession()->pageTextContains('before you can use Content Sync.');
-    $this->assertSession()->fieldDisabled('edit-show-content-sync-id');
-    // The fieldDisabled() seems ot working on button, use
-    // elementAttribteExists() instead.
-    $this->assertSession()->elementAttributeExists('css', '#edit-content-sync-generate-content', 'disabled');
+    // Create a block.
+    $block_title = 'Test Block';
+    $block_content = 'Content sync test block';
+    $edit = [];
+    $edit['info[0][value]'] = $block_title;
+    $edit['body[0][value]'] = $block_content;
+    $this->drupalGet('block/add/basic');
+    $this->submitForm($edit, 'Save');
 
-    // Enable required modules.
-    \Drupal::service('module_installer')->install(['config', 'serialization']);
-
-    // Revisit config page.
-    $this->drupalGet('admin/config/mix');
-    // No warning message.
-    $this->assertSession()->pageTextNotContains('before you can use Content Sync.');
-
-    // Assert the default value and field status.
-    $this->assertSession()->fieldValueEquals('edit-show-content-sync-id', FALSE);
-    $this->assertSession()->fieldEnabled('edit-show-content-sync-id');
-    $this->assertSession()->elementAttributeExists('css', '#edit-content-sync-generate-content', 'disabled');
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->linkExists($block_title);
 
     // Enable content sync.
-    $edit = [];
-    $edit['show_content_sync_id'] = TRUE;
-    $this->submitForm($edit, 'Save configuration');
-    $this->assertSession()->statusCodeEquals(200);
+    $config = \Drupal::configFactory()->getEditable('mix.settings');
+    $config->set('show_content_sync_id', TRUE)->save();
+    // Rebulid all to load the serializer service.
+    $this->rebuildAll();
 
-    // Assert the saved value and button status.
-    $this->assertSession()->fieldValueEquals('edit-show-content-sync-id', TRUE);
-    $this->assertSession()->elementAttributeNotExists('css', '#edit-content-sync-generate-content', 'disabled');
+    // Assert the sync link.
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->linkExists('Add to content sync');
+
+    // Save UUID.
+    $block = BlockContent::load(1);
+    $content_sync_id = 'block_content.' . $block->bundle() . '.' . $block->uuid();
+    $config->set('content_sync_ids', [$content_sync_id])->save();
+    // Clear cache to update the sync link in block list.
+    drupal_flush_all_caches();
+
+    // Assert content_sync_ids.
+    $content_sync_ids = $config->get('content_sync_ids');
+    $this->assertTrue(in_array($content_sync_id, $content_sync_ids));
+
+    // Assert the stop sync link.
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->linkExists('Stop sync');
+
+    // Assign and assert block.
+    $this->drupalPlaceBlock('block_content:' . $block->uuid());
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->pageTextContains($block_content);
+
+    // Export the configuration.
+    // @see ConfigExportImportUITest::testExportImport().
+    $this->drupalGet('admin/config/development/configuration/full/export');
+    $this->submitForm([], 'Export');
+    $this->tarball = $this->getSession()->getPage()->getContent();
+
+    // Delete the block.
+    $block->delete();
+    // Block should be gone.
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->linkNotExists($block_title);
+    $this->assertSession()->pageTextNotContains($block_content);
+
+    // Import the configuration.
+    // @see ConfigExportImportUITest::testExportImport().
+    $filename = 'temporary://' . $this->randomMachineName();
+    file_put_contents($filename, $this->tarball);
+    $this->drupalGet('admin/config/development/configuration/full/import');
+    $this->submitForm(['files[import_tarball]' => $filename], 'Upload');
+    $this->submitForm([], 'Import all');
+
+    // Block show up but the block content not.
+    $this->assertSession()->pageTextContains('This block is broken or missing.');
+
+    // Generate block.
+    $this->drupalGet('admin/config/mix');
+    $this->submitForm([], 'Generate content');
+    $this->assertSession()->pageTextContains('was generated successfully.');
+
+    // Block content shows up.
+    $this->drupalGet('admin/structure/block/block-content');
+    $this->assertSession()->pageTextContains($block_content);
   }
 
 }
