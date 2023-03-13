@@ -75,7 +75,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
     $this->drupalGet('admin/structure/block/block-content');
     $this->assertSession()->linkExists('Add to content sync');
 
-    // Save UUID.
+    // Add UUID.
     $block = BlockContent::load(1);
     $content_sync_id = 'block_content.' . $block->bundle() . '.' . $block->uuid();
     $config->set('content_sync_ids', [$content_sync_id])->save();
@@ -103,7 +103,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
 
     // Delete the block.
     $block->delete();
-    // Block should be gone.
+    // Block should be removed.
     $this->drupalGet('admin/structure/block/block-content');
     $this->assertSession()->linkNotExists($block_title);
     $this->assertSession()->pageTextNotContains($block_content);
