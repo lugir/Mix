@@ -10,7 +10,7 @@ use Drupal\Tests\block_content\Functional\BlockContentTestBase;
  *
  * @group mix
  */
-class MixContentSyncTest extends BlockContentTestBase {
+class MixContentSyncBlockTest extends BlockContentTestBase {
 
   /**
    * {@inheritdoc}
