@@ -183,6 +183,33 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $this->state->get('mix.environment_indicator'),
     ];
 
+    // Configuration management section.
+    $form['cm'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Configuration Management'),
+    ];
+
+    $form['cm']['config_import_ignore_mode'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable config import ignore'),
+      '#description' => $this->t('By enabled this feature, you can choose which configurations (e.g. development related configrations) will not to be imported to other environments.<br>
+It is useful to sync configurations between the dev team members.<br>
+You can import all the ignored configurations after uncheck this checkbox in another Dev environment without effect the Prod environment.'),
+      '#default_value' => $config->get('config_import_ignore.mode'),
+    ];
+
+    $form['cm']['config_import_ignore_list'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Ignored config names'),
+      '#description' => $this->t('One config name per line.'),
+      '#states' => [
+        'visible' => [
+          ':input[name="config_import_ignore_mode"]' => ['checked' => TRUE],
+        ],
+      ],
+      '#default_value' => implode(PHP_EOL, $config->get('config_import_ignore.list')),
+    ];
+
     $form['error_pages'] = [
       '#type' => 'details',
       '#title' => $this->t('Error pages'),
@@ -228,6 +255,11 @@ class SettingsForm extends ConfigFormBase {
     // Get original dev_mode value, use to compare if changes later.
     $originDevMode = $config->get('dev_mode');
 
+    // @todo Refactor to a reusable function or method.
+    $config_import_ignore_list = explode(PHP_EOL, $form_state->getValue('config_import_ignore_list'));
+    $config_import_ignore_list = array_filter(array_map('trim', $config_import_ignore_list));
+    sort($config_import_ignore_list);
+
     // Save config.
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
@@ -235,6 +267,8 @@ class SettingsForm extends ConfigFormBase {
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
+      ->set('config_import_ignore.mode', $form_state->getValue('config_import_ignore_mode'))
+      ->set('config_import_ignore.list', $config_import_ignore_list)
       ->save();
 
     $oldShowFormId = $this->state->get('mix.show_form_id');

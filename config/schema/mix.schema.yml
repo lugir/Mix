@@ -22,3 +22,13 @@ mix.settings:
         content:
           type: string
           label: 'Error page content'
+    config_import_ignore:
+      type: mapping
+      label: 'Config import ignore'
+      mapping:
+        mode:
+          type: boolean
+          label: 'Enable config import ignore'
+        content:
+          type: string
+          label: 'Ignored config names'
