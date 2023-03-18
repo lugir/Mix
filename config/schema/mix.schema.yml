@@ -29,6 +29,8 @@ mix.settings:
         mode:
           type: boolean
           label: 'Enable config import ignore'
-        content:
-          type: string
+        list:
+          type: sequence
           label: 'Ignored config names'
+          sequence:
+            type: string
