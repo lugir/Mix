@@ -187,21 +187,30 @@ class SettingsForm extends ConfigFormBase {
     $form['cm'] = [
       '#type' => 'details',
       '#title' => $this->t('Configuration Management'),
+      '#open' => TRUE,
     ];
 
     $form['cm']['config_import_ignore_mode'] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Enable config import ignore'),
-      '#description' => $this->t('By enabled this feature, you can choose which configurations (e.g. development related configrations) will not to be imported to other environments.<br>
-It is useful to sync configurations between the dev team members.<br>
-You can import all the ignored configurations after uncheck this checkbox in another Dev environment without effect the Prod environment.'),
+      '#description' => $this->t('By enabling this on the Prod site, you can ignore Dev modules and configurations to be imported, and use it for configurations override.<br>
+For more details please see the <a href="https://www.drupal.org/docs/contributed-modules/mix/config-import-ignore" target="_blank">online documentation</a>.'),
       '#default_value' => $config->get('config_import_ignore.mode'),
     ];
 
     $form['cm']['config_import_ignore_list'] = [
       '#type' => 'textarea',
-      '#title' => $this->t('Ignored config names'),
-      '#description' => $this->t('One config name per line.'),
+      '#title' => $this->t('Ignored config items'),
+      '#description' => $this->t('One item per line.<br>
+# To ignore a dev-related module and configurations to be enabled on the Prod site.<br>
+<code>core.extenstion:module.devel</code><br>
+<code>devel.settings</code><br>
+# To ignore or override a configuration item, use the format: <em>config_name:key</em><br>
+<code>mix.settings:dev_mode</code><br>
+<code>system.site:page.front</code><br>
+# To ignore or override an entire configuration, use the format: <em>config_name</em><br>
+<code>system.site</code>
+'),
       '#states' => [
         'visible' => [
           ':input[name="config_import_ignore_mode"]' => ['checked' => TRUE],
