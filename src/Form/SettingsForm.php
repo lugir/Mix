@@ -200,7 +200,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
 
     $form['cm']['config_import_ignore_list'] = [
       '#type' => 'textarea',
-      '#title' => $this->t('Ignored config items'),
+      '#title' => $this->t('Ignored configuration items'),
       '#description' => $this->t('One item per line.<br>
 # To ignore a dev-related module and configurations to be enabled on the Prod site.<br>
 <code>core.extenstion:module.devel</code><br>
