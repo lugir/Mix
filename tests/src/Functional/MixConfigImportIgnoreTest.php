@@ -19,7 +19,7 @@ class MixConfigImportIgnoreTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  protected static $modules = ['config', 'mix'];
+  protected static $modules = ['config', 'mix', 'help'];
 
   /**
    * The contents of the config export tarball, held between test methods.
@@ -99,10 +99,56 @@ class MixConfigImportIgnoreTest extends BrowserTestBase {
     $this->drupalGet($configPage);
     $this->assertSession()->pageTextNotContains('system.site');
 
+    // Enabled a module.
+    $this->installModule('block');
+    $this->drupalGet($configPage);
+    $this->assertSession()->pageTextContains('core.extension');
+
+    // Test ignored module will not be disabled in the import process.
+    $mixSettings->set('config_import_ignore.list', ['core.extension:module.block'])->save();
+    $this->drupalGet($configPage);
+    $this->assertSession()->pageTextNotContains('core.extension');
+
+    // Disable a module.
+    $this->uninstallModule('help');
+    $this->drupalGet($configPage);
+    $this->assertSession()->pageTextContains('core.extension');
+
+    // Test ignored module will not be enabled in the import process.
+    $mixSettings->set('config_import_ignore.list', [
+      'core.extension:module.block',
+      'core.extension:module.help',
+    ])->save();
+    $this->drupalGet($configPage);
+    $this->assertSession()->pageTextNotContains('core.extension');
+
     // Disable config import ignore. system.site shows.
     $mixSettings->set('config_import_ignore.mode', FALSE)->save();
     $this->drupalGet($configPage);
     $this->assertSession()->pageTextContains('system.site');
+
+  }
+
+  /**
+   * Installs a module.
+   *
+   * @param string $module
+   *   The module name.
+   */
+  protected function installModule($module) {
+    $this->container->get('module_installer')->install([$module]);
+    $this->container = \Drupal::getContainer();
+  }
+
+  /**
+   * Uninstalls a module.
+   *
+   * @param string $module
+   *   The module name.
+   */
+  protected function uninstallModule($module) {
+    $this->container->get('module_installer')->uninstall([$module]);
+    $this->container = \Drupal::getContainer();
   }
 
 }
