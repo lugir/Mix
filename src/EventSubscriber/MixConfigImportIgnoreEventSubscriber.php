@@ -96,7 +96,7 @@ class MixConfigImportIgnoreEventSubscriber implements EventSubscriberInterface {
       }
       // Ignore partial configs.
       else {
-        list($configName, $key) = explode(':', $item);
+        [$configName, $key] = explode(':', $item);
         $parents = explode('.', $key);
 
         // Load sync config.
