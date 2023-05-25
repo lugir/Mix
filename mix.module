@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\user\Entity\Role;
 
 /**
  * Implements hook_help().
@@ -104,4 +105,162 @@ function mix_page_attachments_alter(array &$attachments): void {
       }
     }
   }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  // Get options.
+  $menu_link = $form_state->getFormObject()->getEntity();
+  $menu_link_options = $menu_link->link->options;
+  if (isset($menu_link_options['attributes']['class']) && is_array($menu_link_options['attributes']['class'])) {
+    $menu_link_options['attributes']['class'] = implode(' ', $menu_link_options['attributes']['class']);
+  }
+
+  $form['mix_advanced'] = [
+    '#type' => 'details',
+    '#title' => t('Advanced (by Mix module)'),
+    '#tree' => TRUE,
+    '#open' => TRUE,
+  ];
+
+  // Roles.
+  $roles = Role::loadMultiple();
+  $options = [];
+  foreach ($roles as $key => $role) {
+    $options[$key] = $role->get('label');
+  }
+  $form['mix_advanced']['roles'] = [
+    '#type' => 'checkboxes',
+    '#title' => t('The roles that can see this menu item.'),
+    '#options' => $options,
+    '#description' => t('To allow all roles to see this link, leave it empty.'),
+    '#default_value' => $menu_link_options['mix']['roles'] ?? [],
+  ];
+
+  // Link attributes.
+  $form['mix_advanced']['attributes'] = [
+    '#type' => 'details',
+    '#title' => t('Link attributes'),
+    '#description' => t('Set the link target to open it in a new window, or add id and class so that JS/CSS can easily interact with the link.'),
+    '#open' => TRUE,
+  ];
+
+  $form['mix_advanced']['attributes']['id'] = [
+    '#type' => 'textfield',
+    '#title' => t('id'),
+    '#description' => t('Add an id attribute to this link'),
+    '#default_value' => $menu_link_options['attributes']['id'] ?? '',
+  ];
+
+  $form['mix_advanced']['attributes']['class'] = [
+    '#type' => 'textfield',
+    '#title' => t('class'),
+    '#description' => t('Add CSS class(es) to this link, seperate by a blank.'),
+    '#default_value' => $menu_link_options['attributes']['class'] ?? '',
+  ];
+
+  $form['mix_advanced']['attributes']['target'] = [
+    '#type' => 'textfield',
+    '#title' => t('target'),
+    '#description' => t('Add a target attribute to this link, e.g. "_blank", "_self"'),
+    '#default_value' => $menu_link_options['attributes']['target'] ?? '',
+  ];
+
+  // Link container attributes.
+  $form['mix_advanced']['container_attributes'] = [
+    '#type' => 'details',
+    '#title' => t('Link container attributes'),
+    '#description' => t('Set attributes to the container element (<code>&lt;li&gt;</code>) of the menu link.'),
+  ];
+
+  $form['mix_advanced']['container_attributes']['id'] = [
+    '#type' => 'textfield',
+    '#title' => t('id'),
+    '#description' => t('Add an id attribute to the link container'),
+    '#default_value' => $menu_link_options['mix']['container_attributes']['id'] ?? '',
+  ];
+
+  $form['mix_advanced']['container_attributes']['class'] = [
+    '#type' => 'textfield',
+    '#title' => t('class'),
+    '#description' => t('Add CSS class(es) to the link container, seperate by a blank.'),
+    '#default_value' => $menu_link_options['mix']['container_attributes']['class'] ?? '',
+  ];
+
+  // Add an additional function to save options.
+  $form['#entity_builders']['mix'] = 'mix_menu_link_content_form_entity_builder';
+}
+
+/**
+ * Additional submit function for menu link add/edit.
+ */
+function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$form, &$form_state) {
+
+  $attributes = $form_state->getValue('mix_advanced')['attributes'];
+  // Remove attributes if it's empty.
+  foreach ($attributes as $key => $attr) {
+    if (!$attr) {
+      unset($attributes[$key]);
+    }
+  }
+  // Turn class string into array.
+  if (isset($attributes['class']) && !is_array($attributes['class'])) {
+    $attributes['class'] = array_filter(explode(' ', $attributes['class']));
+  }
+
+  $options = [
+    // These attributes will be used in mix_preprocess_menu().
+    'mix' => [
+      'roles' => $form_state->getValue('mix_advanced')['roles'],
+      'container_attributes' => $form_state->getValue('mix_advanced')['container_attributes'],
+    ],
+    // These attributes will apply to the menu link by core.
+    'attributes' => $attributes,
+  ];
+
+  // Set link options.
+  $menu_link->link->first()->options = $options;
+}
+
+/**
+ * Implements template_preprocess_menu().
+ */
+function mix_preprocess_menu(&$variables) {
+  _mix_preprocess_menu_item($variables['items']);
+}
+
+/**
+ * Control menu item visibilities and attributes based on stored options.
+ */
+function _mix_preprocess_menu_item(&$items) {
+
+  $currentUserRoles = \Drupal::currentUser()->getRoles();
+  foreach ($items as $key => &$item) {
+
+    // Hide menu item if $allowedRoles is not empty
+    // and current user don't have those roles.
+    $options = $item['url']->getOption('mix');
+    $allowedRoles = isset($options['roles']) && is_array($options['roles']) ? array_filter($options['roles']) : [];
+    if ($allowedRoles && !array_intersect($allowedRoles, $currentUserRoles)) {
+      unset($items[$key]);
+      continue;
+    }
+
+    // Set attributes to the menu item container.
+    if (isset($options['container_attributes'])) {
+      foreach ($options['container_attributes'] as $key => $value) {
+        if ($value) {
+          $item['attributes']->setAttribute($key, $value);
+        }
+      }
+    }
+
+    if (!empty($item['below'])) {
+      _mix_preprocess_menu_item($item['below']);
+    }
+  }
+
 }
