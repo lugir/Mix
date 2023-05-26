@@ -110,11 +110,30 @@ function mix_page_attachments_alter(array &$attachments): void {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
+function mix_form_menu_link_edit_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Add advanced settings to pre-defined menu links.
+  mix_form_menu_link_content_form_alter($form, $form_state, $form_id);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
-  // Get options.
-  $menu_link = $form_state->getFormObject()->getEntity();
-  $menu_link_options = $menu_link->link->options;
+  // menu_link_edit - for pre-defined menu links.
+  if ($form_id == 'menu_link_edit') {
+    $menu_link_options = \Drupal::state()->get('mix.menu_settings.' . $form['menu_link_id']['#value']);
+    // Add custom submit callback.
+    $form['#submit'][] = 'mix_menu_link_edit_submit';
+  }
+  // menu_link_content_menu_link_content_form - for menu_link_content.
+  elseif ($form_id == 'menu_link_content_menu_link_content_form') {
+    $menu_link = $form_state->getFormObject()->getEntity();
+    $menu_link_options = $menu_link->link->options;
+    // Add an additional function to save options.
+    $form['#entity_builders']['mix'] = 'mix_menu_link_content_form_entity_builder';
+  }
+
   if (isset($menu_link_options['attributes']['class']) && is_array($menu_link_options['attributes']['class'])) {
     $menu_link_options['attributes']['class'] = implode(' ', $menu_link_options['attributes']['class']);
   }
@@ -190,15 +209,12 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
     '#default_value' => $menu_link_options['mix']['container_attributes']['class'] ?? '',
   ];
 
-  // Add an additional function to save options.
-  $form['#entity_builders']['mix'] = 'mix_menu_link_content_form_entity_builder';
 }
 
 /**
- * Additional submit function for menu link add/edit.
+ * Build menu link options from $form_state.
  */
-function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$form, &$form_state) {
-
+function _mix_build_menu_link_options(array &$form, FormStateInterface $form_state) {
   $attributes = $form_state->getValue('mix_advanced')['attributes'];
   // Remove attributes if it's empty.
   foreach ($attributes as $key => $attr) {
@@ -220,6 +236,27 @@ function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$f
     // These attributes will apply to the menu link by core.
     'attributes' => $attributes,
   ];
+  return $options;
+}
+
+/**
+ * Save advanced settings for pre-defined menu links.
+ */
+function mix_menu_link_edit_submit(array &$form, FormStateInterface $form_state) {
+
+  $options = _mix_build_menu_link_options($form, $form_state);
+
+  // Save menu settings by State API.
+  // Can't save it as menu_tree's options, it will be restored after a cache clear.
+  \Drupal::state()->set('mix.menu_settings.' . $form['menu_link_id']['#value'], $options);
+}
+
+/**
+ * Save advanced settings for menu_link_content.
+ */
+function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$form, &$form_state) {
+
+  $options = _mix_build_menu_link_options($form, $form_state);
 
   // Set link options.
   $menu_link->link->first()->options = $options;
@@ -229,24 +266,43 @@ function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$f
  * Implements template_preprocess_menu().
  */
 function mix_preprocess_menu(&$variables) {
-  _mix_preprocess_menu_item($variables['items']);
+  _mix_preprocess_menu_item($variables, $variables['items']);
 }
 
 /**
  * Control menu item visibilities and attributes based on stored options.
  */
-function _mix_preprocess_menu_item(&$items) {
+function _mix_preprocess_menu_item(&$variables, &$items) {
 
   $currentUserRoles = \Drupal::currentUser()->getRoles();
-  foreach ($items as $key => &$item) {
+
+  foreach ($items as $id => &$item) {
+    if (strpos($id, 'menu_link_content:') === 0) {
+      $options = $item['url']->getOption('mix');
+    }
+    else {
+      $advancedSettings = \Drupal::state()->get('mix.menu_settings.' . $id);
+      if ($advancedSettings) {
+        $item['url']->setOptions($advancedSettings + $item['url']->getOptions());
+      }
+      $options = $advancedSettings['mix'] ?? [];
+    }
 
     // Hide menu item if $allowedRoles is not empty
     // and current user don't have those roles.
-    $options = $item['url']->getOption('mix');
     $allowedRoles = isset($options['roles']) && is_array($options['roles']) ? array_filter($options['roles']) : [];
-    if ($allowedRoles && !array_intersect($allowedRoles, $currentUserRoles)) {
-      unset($items[$key]);
-      continue;
+
+    if ($allowedRoles) {
+      // Add cache context if menu item has access control based on roles.
+      if (!isset($variables['#cache']['contexts']) || !array_search('user.roles', $variables['#cache']['contexts'])) {
+        $variables['#cache']['contexts'][] = 'user.roles';
+      }
+
+      // Hide menu item if current user don't have allowed roles.
+      if (!array_intersect($allowedRoles, $currentUserRoles)) {
+        unset($items[$id]);
+        continue;
+      }
     }
 
     // Set attributes to the menu item container.
@@ -259,7 +315,7 @@ function _mix_preprocess_menu_item(&$items) {
     }
 
     if (!empty($item['below'])) {
-      _mix_preprocess_menu_item($item['below']);
+      _mix_preprocess_menu_item($variables, $item['below']);
     }
   }
 
