@@ -62,6 +62,63 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mix_form_user_admin_settings_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  $config = \Drupal::config('mix.settings');
+  $form['registration_cancellation']['mix_register_password'] = [
+    '#type' => 'checkbox',
+    '#title' => t('Show password fields on registration form.'),
+    '#description' => t('Provided by <a href="https://www.drupal.org/project/mix" target="_blank">Mix</a> module'),
+    '#default_value' => $config->get('register_password'),
+  ];
+  $form['actions']['submit']['#submit'][] = '_mix_user_admin_settings_submit';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mix_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+  $registerWithPassword = \Drupal::config('mix.settings')->get('register_password');
+
+  // If 'register with password' is enabled and there is no 'password' field,
+  // add password fields and submit function in register form.
+  if ($registerWithPassword && !isset($form['account']['pass'])) {
+    $form['account']['mix_register_password'] = [
+      '#type' => 'password_confirm',
+      '#size' => 25,
+      '#description' => t('Provide a password for the new account in both fields.'),
+      '#required' => TRUE,
+    ];
+    // Add submit function right before ::save() to override random password
+    // by the value of the 'mix_register_password' field.
+    // @see RegisterForm::save()
+    $index = array_search('::save', $form['actions']['submit']['#submit']);
+    array_splice($form['actions']['submit']['#submit'], $index, 0, '_mix_form_user_register_submit');
+  }
+}
+
+/**
+ * Save user admin settings.
+ */
+function _mix_user_admin_settings_submit(&$form, FormStateInterface $form_state) {
+  $config = \Drupal::configFactory()->getEditable('mix.settings');
+  $config->set('register_password', $form_state->getValue('mix_register_password'))
+    ->save();
+}
+
+/**
+ * Save user password with the value of the 'mix_register_password' field.
+ */
+function _mix_form_user_register_submit(&$form, FormStateInterface $form_state) {
+  $pass = $form_state->getValue('mix_register_password');
+  $form_state->setValue('pass', $pass);
+  $account = $form_state->getFormObject()->getEntity();
+  $account->setPassword($pass);
+}
+
+/**
  * Implements hook_page_top().
  */
 function mix_page_top(array &$page_top) {
@@ -247,7 +304,8 @@ function mix_menu_link_edit_submit(array &$form, FormStateInterface $form_state)
   $options = _mix_build_menu_link_options($form, $form_state);
 
   // Save menu settings by State API.
-  // Can't save it as menu_tree's options, it will be restored after a cache clear.
+  // Can't save it as menu_tree's options, it will be restored
+  // after a cache clear.
   \Drupal::state()->set('mix.menu_settings.' . $form['menu_link_id']['#value'], $options);
 }
 

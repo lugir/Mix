@@ -12,6 +12,9 @@ mix.settings:
     remove_x_generator:
       type: boolean
       label: 'Remove X-Generator'
+    register_password:
+      type: boolean
+      label: 'Register password'
     error_page:
       type: mapping
       label: 'Error page settings'
