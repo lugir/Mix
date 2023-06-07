@@ -64,7 +64,7 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function mix_form_user_admin_settings_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function mix_form_user_admin_settings_alter(&$form, FormStateInterface $form_state, $form_id) {
   $config = \Drupal::config('mix.settings');
   $form['registration_cancellation']['mix_register_password'] = [
     '#type' => 'checkbox',
@@ -78,7 +78,7 @@ function mix_form_user_admin_settings_alter(&$form, \Drupal\Core\Form\FormStateI
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function mix_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+function mix_form_user_register_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
   $registerWithPassword = \Drupal::config('mix.settings')->get('register_password');
 
