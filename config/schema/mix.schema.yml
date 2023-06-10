@@ -37,3 +37,11 @@ mix.settings:
           label: 'Ignored config names'
           sequence:
             type: string
+
+block.block.*.third_party.mix_block:
+  type: mapping
+  label: Block third party settings
+  mapping:
+    class:
+      type: string
+      label: Block class(es)

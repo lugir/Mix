@@ -5,6 +5,8 @@
  * Primary module hooks for Mix module.
  */
 
+use Drupal\block\BlockInterface;
+use Drupal\block\Entity\Block;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
@@ -69,7 +71,7 @@ function mix_form_user_admin_settings_alter(&$form, FormStateInterface $form_sta
   $form['registration_cancellation']['mix_register_password'] = [
     '#type' => 'checkbox',
     '#title' => t('Show password fields on registration form.'),
-    '#description' => t('Provided by <a href="https://www.drupal.org/project/mix" target="_blank">Mix</a> module'),
+    '#description' => t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
     '#default_value' => $config->get('register_password'),
   ];
   $form['actions']['submit']['#submit'][] = '_mix_user_admin_settings_submit';
@@ -167,6 +169,52 @@ function mix_page_attachments_alter(array &$attachments): void {
 /**
  * Implements hook_form_FORM_ID_alter().
  */
+function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+
+  $form_object = $form_state->getFormObject();
+  $block = $form_object->getEntity();
+
+  // This will automatically be saved in the third party settings.
+  $form['third_party_settings']['#tree'] = TRUE;
+  $form['third_party_settings']['mix_block']['class'] = [
+    '#type' => 'textfield',
+    '#title' => t('CSS class(es)'),
+    '#description' => t('Add custom CSS classes to the block wrapper, make it easy to style/manuplate by CSS/JS. Use space to separate multiple classes.') . '<br>' .
+      t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
+    '#default_value' => $block->getThirdPartySetting('mix_block', 'class'),
+    '#maxlength' => 255,
+  ];
+
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_presave().
+ */
+function mix_block_presave(BlockInterface $entity) {
+  // @see Drupal\Core\Config\Entity\ThirdPartySettingsInterface
+  if (empty($entity->getThirdPartySetting('mix_block', 'class'))) {
+    $entity->unsetThirdPartySetting('mix_block', 'class');
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ */
+function mix_preprocess_block(&$variables) {
+  if (!empty($variables['elements']['#id'])) {
+    $block = Block::load($variables['elements']['#id']);
+    if ($block && $classes = $block->getThirdPartySetting('mix_block', 'class')) {
+      $classes = explode(' ', $classes);
+      foreach ($classes as $class) {
+        $variables['attributes']['class'][] = $class;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
 function mix_form_menu_link_edit_alter(&$form, FormStateInterface $form_state, $form_id) {
   // Add advanced settings to pre-defined menu links.
   mix_form_menu_link_content_form_alter($form, $form_state, $form_id);
@@ -234,7 +282,7 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
   $form['mix_advanced']['attributes']['class'] = [
     '#type' => 'textfield',
     '#title' => t('class'),
-    '#description' => t('Add CSS class(es) to this link, seperate by a blank.'),
+    '#description' => t('Add CSS class(es) to this link, seperated by a blank.'),
     '#default_value' => $menu_link_options['attributes']['class'] ?? '',
   ];
 
