@@ -1,0 +1,129 @@
+.mix-dropdown {
+  position: relative;
+  display: flex;
+  /* @see https://www.drupal.org/docs/theming-drupal/z-indexes-in-drupal-8 */
+  z-index: 100;
+  padding: 0;
+  margin: 0;
+}
+
+.mix-dropdown li {
+  list-style: none;
+  flex-direction: column;
+  line-height: 40px;
+  background-color: #fff;
+  position: relative;
+}
+
+.mix-dropdown .menu-item {
+  display: flex;
+}
+
+.mix-dropdown .menu-item-link {
+  display: block;
+}
+
+.mix-dropdown .menu-item-link,
+.mix-dropdown .menu-item-other {
+  padding: 0 0.5rem;
+  flex-grow: 1;
+}
+
+.mix-icon-toggle {
+  padding: 0 0.5rem;
+}
+
+.mix-dropdown li:hover,
+.mix-dropdown a:hover {
+  background: #efefef;
+}
+
+/* Hide dropdown toggles */
+.mix-menu-toggle,
+.mix-dropdown-box [id^=mix-dropdown-toggle-] {
+  display: none;
+}
+
+.mix-dropdown-toggle {
+  display: inline-block;
+}
+
+.mix-menu-toggle {
+  font-size: 28px;
+  display: none;
+}
+
+/* Dropdown toggle symbol */
+.mix-icon-toggle:after {
+  /* Symboles: ▼ ⌵ ✚ */
+  content: " ⌵";
+}
+
+/* Hide dropdowns by default */
+.mix-dropdown li ul {
+  display: none;
+  list-style: none;
+  padding-left: initial;
+  position: absolute;
+  width: 120px;
+  padding: 0;
+  margin: 0;
+}
+
+/* Display dropdowns on hover */
+.mix-dropdown li:hover > ul {
+  display: block;
+}
+
+@media all and (max-width : 768px) {
+	/* Hide the menu by default */
+  .mix-dropdown {
+    display: none;
+  }
+
+  .mix-dropdown li {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .mix-dropdown ul {
+    flex-basis: 100%;
+    display: none;
+  }
+
+  .mix-dropdown .menu-item {
+    width: 100%;
+  }
+
+    /* Dropdown toggle symbol */
+  .mix-icon-toggle:after {
+    /* Symboles: ▼ ⌵ ✚ */
+    content: "✚";
+  }
+
+  /* Hide dropdowns on hover (input unchecked) */
+  .mix-dropdown li:hover > ul {
+    display: none;
+  }
+
+  .mix-dropdown .mix-dropdown-toggle {
+    padding: 0 0.5rem;
+  }
+
+  .mix-menu-toggle {
+    display: inline-block;
+  }
+
+  /* Show dropdown when clicked on the label */
+	[id^=mix-dropdown-toggle-]:checked + ul {
+		display: block !important;
+	}
+
+  .mix-dropdown li ul {
+    display: none;
+    position: static;
+    width: 100%;
+  }
+}

@@ -45,3 +45,6 @@ block.block.*.third_party.mix_block:
     class:
       type: string
       label: Block class(es)
+    dropdown:
+      type: boolean
+      label: Dropdown
