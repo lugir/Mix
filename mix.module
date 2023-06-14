@@ -191,8 +191,8 @@ function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form
   // Add a dropdown checkbox for menu blocks.
   if (strpos($pluginId, 'system_menu_block:') === 0) {
     $form['third_party_settings']['mix_block']['dropdown'] = [
-      '#title' => t('Display as a dropdown menu'),
-      '#default_value' => t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
+      '#title' => t('Display as a dropdown menu.'),
+      '#description' => t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
       '#type' => 'checkbox',
       '#default_value' => $block->getThirdPartySetting('mix_block', 'dropdown'),
     ];
