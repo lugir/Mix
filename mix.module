@@ -181,7 +181,7 @@ function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form
     '#type' => 'textfield',
     '#title' => t('CSS class(es)'),
     '#description' => t('Add custom CSS classes to the block wrapper, make it easy to style/manuplate by CSS/JS. Use space to separate multiple classes.') . '<br>' .
-      t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
+    t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
     '#default_value' => $block->getThirdPartySetting('mix_block', 'class'),
     '#maxlength' => 255,
   ];

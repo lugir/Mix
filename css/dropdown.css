@@ -102,7 +102,7 @@
     min-width: 200px;
   }
 
-	/* Hide the menu by default */
+  /* Hide the menu by default */
   .mix-dropdown-wrapper {
     display: none;
     max-width: 100%;
@@ -160,8 +160,8 @@
   /* Show dropdown when clicked on the label */
   [id^=mix-dropdown-toggle-]:checked + .mix-dropdown-wrapper,
   [id^=mix-dropdown-toggle-]:checked + .mix-dropdown-wrapper > ul,
-	[id^=mix-dropdown-toggle-]:checked + ul {
-		display: block !important;
-	}
+  [id^=mix-dropdown-toggle-]:checked + ul {
+    display: block !important;
+  }
 
 }
