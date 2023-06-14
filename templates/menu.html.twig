@@ -28,10 +28,15 @@
 #}
 
 {# Main menu toggle for Mobile #}
-<label for="mix-dropdown-toggle-menu-{{ menu_name }}" class="mix-dropdown-toggle mix-menu-toggle" >☰</label>
-<input type="checkbox" id="mix-dropdown-toggle-menu-{{ menu_name }}" />
+<div class="mix-menu-toggle-wrapper">
+  <label for="mix-dropdown-toggle-menu-{{ menu_name }}" class="mix-dropdown-toggle mix-menu-toggle" >☰</label>
+</div>
 
-{{ menus.menu_links(items, attributes, 0) }}
+{# Put <input> before <ul> in order to display submenu by selector [id^=mix-dropdown-toggle-]:checked + ul #}
+<input type="checkbox" id="mix-dropdown-toggle-menu-{{ menu_name }}" />
+<div id="mix-dropdown-{{ menu_name }}" class="mix-dropdown-wrapper">
+  {{ menus.menu_links(items, attributes, 0) }}
+</div>
 
 {% macro menu_links(items, attributes, menu_level) %}
   {% import _self as menus %}
@@ -43,17 +48,18 @@
     {% endif %}
     {% for i, item in items %}
       <li{{ item.attributes }}>
+        {% set checkbox_id = 'mix-dropdown-toggle-' ~ i|replace({":": "-", ".": "-"}) %}
         <div class="menu-item">
           {% set menu_item_class = item.url.routeName not in ['<nolink>', '<button>'] ? 'menu-item-link' : 'menu-item-other' %}
           {{ link(item.title, item.url, { class: menu_item_class }) }}
           {# Dropdown toggle #}
           {% if item.below %}
-          <label for="mix-dropdown-toggle-{{ i|replace({":": "-"}) }}" class="mix-dropdown-toggle"><span class="mix-icon-toggle"></span></label>
+          <label for="{{ checkbox_id }}" class="mix-dropdown-toggle"><span class="mix-icon-toggle"></span></label>
           {% endif %}
         </div>
         {% if item.below %}
           {# Put <input> before <ul> in order to display submenu by selector [id^=mix-dropdown-toggle-]:checked + ul #}
-          <input type="checkbox" id="mix-dropdown-toggle-{{ i|replace({":": "-"}) }}" />
+          <input type="checkbox" id="{{ checkbox_id }}" />
           {{ menus.menu_links(item.below, attributes, menu_level + 1) }}
         {% endif %}
       </li>

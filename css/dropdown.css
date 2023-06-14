@@ -1,8 +1,19 @@
+/* The wrapper out of ul element */
+.mix-dropdown-wrapper {
+  /* @see https://www.drupal.org/docs/theming-drupal/z-indexes-in-drupal-8 */
+  z-index: 200;
+  position: relative;
+}
+
+.mix-menu-toggle {
+  font-size: 28px;
+  display: none;
+}
+
+/* The ul element */
 .mix-dropdown {
   position: relative;
   display: flex;
-  /* @see https://www.drupal.org/docs/theming-drupal/z-indexes-in-drupal-8 */
-  z-index: 100;
   padding: 0;
   margin: 0;
 }
@@ -11,56 +22,27 @@
   list-style: none;
   flex-direction: column;
   line-height: 40px;
-  background-color: #fff;
   position: relative;
 }
 
-.mix-dropdown .menu-item {
-  display: flex;
-}
-
-.mix-dropdown .menu-item-link {
-  display: block;
-}
-
-.mix-dropdown .menu-item-link,
-.mix-dropdown .menu-item-other {
-  padding: 0 0.5rem;
-  flex-grow: 1;
-}
-
-.mix-icon-toggle {
-  padding: 0 0.5rem;
-}
-
-.mix-dropdown li:hover,
-.mix-dropdown a:hover {
+.mix-dropdown li:hover {
   background: #efefef;
 }
 
-/* Hide dropdown toggles */
-.mix-menu-toggle,
-.mix-dropdown-box [id^=mix-dropdown-toggle-] {
+/* Hide toggle by default */
+.mix-dropdown li .mix-dropdown-toggle {
   display: none;
 }
 
-.mix-dropdown-toggle {
-  display: inline-block;
-}
-
-.mix-menu-toggle {
-  font-size: 28px;
-  display: none;
-}
-
-/* Dropdown toggle symbol */
-.mix-icon-toggle:after {
-  /* Symboles: ▼ ⌵ ✚ */
-  content: " ⌵";
+.mix-dropdown li .mix-icon-toggle {
+  padding: 0 0.5rem;
 }
 
 /* Hide dropdowns by default */
 .mix-dropdown li ul {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-top: 0px;
   display: none;
   list-style: none;
   padding-left: initial;
@@ -70,15 +52,64 @@
   margin: 0;
 }
 
+.mix-dropdown li .menu-item {
+  display: flex;
+  width: 100%;
+}
+
+.mix-dropdown li .menu-item-link {
+  display: block;
+}
+
+.mix-dropdown li .menu-item-link,
+.mix-dropdown li .menu-item-other {
+  padding: 0 0.5rem;
+  flex-grow: 1;
+}
+
+/* Hide dropdown toggles */
+.mix-menu-toggle-wrapper,
+.mix-dropdown-box [id^=mix-dropdown-toggle-] {
+  display: none;
+}
+
+.mix-dropdown-toggle {
+  display: inline-block;
+}
+
+/* Dropdown toggle symbol */
+.mix-icon-toggle:after {
+  /* Symboles: ▼ ⌵ ✚ */
+  content: " ⌵";
+}
+
+
 /* Display dropdowns on hover */
 .mix-dropdown li:hover > ul {
   display: block;
 }
 
 @media all and (max-width : 768px) {
+
+  .mix-menu-toggle-wrapper {
+    display: flex;
+    justify-content: end;
+  }
+
+  .mix-dropdown-wrapper {
+    position: absolute;
+    right: 0;
+    min-width: 200px;
+  }
+
 	/* Hide the menu by default */
-  .mix-dropdown {
+  .mix-dropdown-wrapper {
     display: none;
+    max-width: 100%;
+    border-top: 0px;
+    background-color: #fff;
+    border-left: 1px solid #ddd;
+    border-right: 1px solid #ddd;
   }
 
   .mix-dropdown li {
@@ -88,19 +119,16 @@
     flex-wrap: wrap;
   }
 
-  .mix-dropdown ul {
+  .mix-dropdown li .menu-item {
+    border-bottom: 1px solid #ddd;
+  }
+
+  .mix-dropdown li ul {
     flex-basis: 100%;
     display: none;
-  }
-
-  .mix-dropdown .menu-item {
-    width: 100%;
-  }
-
-    /* Dropdown toggle symbol */
-  .mix-icon-toggle:after {
-    /* Symboles: ▼ ⌵ ✚ */
-    content: "✚";
+    background-color: #eee;
+    border: 0;
+    position: static;
   }
 
   /* Hide dropdowns on hover (input unchecked) */
@@ -108,22 +136,32 @@
     display: none;
   }
 
-  .mix-dropdown .mix-dropdown-toggle {
-    padding: 0 0.5rem;
-  }
-
-  .mix-menu-toggle {
+  /* Show toggle in small screen */
+  .mix-dropdown li .mix-dropdown-toggle {
     display: inline-block;
   }
 
+  /* Dropdown toggle symbol */
+  .mix-dropdown .mix-icon-toggle:after {
+    /* Symboles: ▼ ⌵ ✚ */
+    content: "✚";
+  }
+
+  .mix-dropdown .mix-dropdown-toggle {
+    padding: 0 0.5rem;
+    border-left: 1px solid #ddd;
+  }
+
+  .mix-dropdown .mix-menu-toggle {
+    display: inline-block;
+    padding: 0 0.5rem;
+  }
+
   /* Show dropdown when clicked on the label */
+  [id^=mix-dropdown-toggle-]:checked + .mix-dropdown-wrapper,
+  [id^=mix-dropdown-toggle-]:checked + .mix-dropdown-wrapper > ul,
 	[id^=mix-dropdown-toggle-]:checked + ul {
 		display: block !important;
 	}
 
-  .mix-dropdown li ul {
-    display: none;
-    position: static;
-    width: 100%;
-  }
 }
