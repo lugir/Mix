@@ -32,7 +32,7 @@ class MixBlockTest extends BrowserTestBase {
     $this->drupalGet('admin/structure/block/add/system_menu_block:account/stark', ['query' => ['region' => 'secondary_menu']]);
     $edit = [
       'region' => 'secondary_menu',
-      'third_party_settings[mix_block][class]' => 'custom-block-class custom-block-class2',
+      'third_party_settings[mix][class]' => 'custom-block-class custom-block-class2',
     ];
     $this->submitForm($edit, 'Save block');
 
@@ -43,7 +43,7 @@ class MixBlockTest extends BrowserTestBase {
     // Test remove block class.
     $this->drupalGet('admin/structure/block/manage/useraccountmenu');
     $edit = [
-      'third_party_settings[mix_block][class]' => '',
+      'third_party_settings[mix][class]' => '',
     ];
     $this->submitForm($edit, 'Save block');
 

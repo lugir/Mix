@@ -177,12 +177,12 @@ function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form
   // Add CSS class(es) field to all block.
   // This will automatically be saved in the third party settings.
   $form['third_party_settings']['#tree'] = TRUE;
-  $form['third_party_settings']['mix_block']['class'] = [
+  $form['third_party_settings']['mix']['class'] = [
     '#type' => 'textfield',
     '#title' => t('CSS class(es)'),
     '#description' => t('Add custom CSS classes to the block wrapper, make it easy to style/manuplate by CSS/JS. Use space to separate multiple classes.') . '<br>' .
     t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
-    '#default_value' => $block->getThirdPartySetting('mix_block', 'class'),
+    '#default_value' => $block->getThirdPartySetting('mix', 'class'),
     '#maxlength' => 255,
   ];
 
@@ -190,11 +190,11 @@ function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form
 
   // Add a dropdown checkbox for menu blocks.
   if (strpos($pluginId, 'system_menu_block:') === 0) {
-    $form['third_party_settings']['mix_block']['dropdown'] = [
+    $form['third_party_settings']['mix']['dropdown'] = [
       '#title' => t('Display as a dropdown menu.'),
       '#description' => t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
       '#type' => 'checkbox',
-      '#default_value' => $block->getThirdPartySetting('mix_block', 'dropdown'),
+      '#default_value' => $block->getThirdPartySetting('mix', 'dropdown'),
     ];
   }
 }
@@ -204,12 +204,12 @@ function mix_form_block_form_alter(&$form, FormStateInterface $form_state, $form
  */
 function mix_block_presave(BlockInterface $entity) {
   // @see Drupal\Core\Config\Entity\ThirdPartySettingsInterface
-  if (empty($entity->getThirdPartySetting('mix_block', 'class'))) {
-    $entity->unsetThirdPartySetting('mix_block', 'class');
+  if (empty($entity->getThirdPartySetting('mix', 'class'))) {
+    $entity->unsetThirdPartySetting('mix', 'class');
   }
 
-  if (empty($entity->getThirdPartySetting('mix_block', 'dropdown'))) {
-    $entity->unsetThirdPartySetting('mix_block', 'dropdown');
+  if (empty($entity->getThirdPartySetting('mix', 'dropdown'))) {
+    $entity->unsetThirdPartySetting('mix', 'dropdown');
   }
 }
 
@@ -225,7 +225,7 @@ function mix_preprocess_block(&$variables) {
     }
 
     // Add custom CSS class to the block.
-    if ($classes = $block->getThirdPartySetting('mix_block', 'class')) {
+    if ($classes = $block->getThirdPartySetting('mix', 'class')) {
       $classes = explode(' ', $classes);
       foreach ($classes as $class) {
         $variables['attributes']['class'][] = $class;
@@ -233,7 +233,7 @@ function mix_preprocess_block(&$variables) {
     }
 
     // Add dropdown feature to the menu block.
-    if ($block->getThirdPartySetting('mix_block', 'dropdown')) {
+    if ($block->getThirdPartySetting('mix', 'dropdown')) {
       $variables['#attached']['library'][] = 'mix/dropdown';
       // Add class to the block.
       $variables['attributes']['class'][] = 'mix-dropdown-box';

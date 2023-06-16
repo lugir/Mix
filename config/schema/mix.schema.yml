@@ -38,7 +38,7 @@ mix.settings:
           sequence:
             type: string
 
-block.block.*.third_party.mix_block:
+block.block.*.third_party.mix:
   type: mapping
   label: Block third party settings
   mapping:
