@@ -365,6 +365,16 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
     '#default_value' => $menu_link_options['mix']['container_attributes']['class'] ?? '',
   ];
 
+  // Add an addition submit function to handle menu token.
+  $form['actions']['submit']['#submit'][] = 'mix_menu_token_form_submit';
+}
+
+/**
+ * Additional submit function to handle menu token.
+ */
+function mix_menu_token_form_submit(array &$form, FormStateInterface $form_state) {
+  // Rebuld menu link after form submit to avoid 'no corresponding route' error.
+  \Drupal::service('plugin.manager.menu.link')->rebuild();
 }
 
 /**
@@ -420,10 +430,55 @@ function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$f
 }
 
 /**
+ * Implements hook_link_alter().
+ */
+function mix_link_alter(&$variables) {
+
+  // Replace menu token.
+  if (isset($variables['options']['mix']['menu_token'])) {
+    $token_service = \Drupal::token();
+
+    // Support simple tokens which don't need $data.
+    // like [site:xxx], [date:xxx]，[current-user:xxx] and so on.
+    // @TBD: Support [user:xxx], [node:xxx]? Which need to pass $data.
+    // Get url from options and replace tokens.
+    $tokenUrl = str_replace('base:', '/', $variables['options']['mix']['menu_token']['url']);
+    $url = $token_service->replace($tokenUrl);
+    // Generate Url object with $url.
+    $urlObject = Url::fromUserInput($url, $variables['options']);
+    // Use new Url object.
+    $variables['url'] = $urlObject;
+  }
+}
+
+/**
  * Implements template_preprocess_menu().
  */
 function mix_preprocess_menu(&$variables) {
   _mix_preprocess_menu_item($variables, $variables['items']);
+}
+
+/**
+ * Implements hook_menu_links_discovered_alter().
+ */
+function mix_menu_links_discovered_alter(&$links) {
+
+  $token_service = \Drupal::token();
+  foreach ($links as &$link) {
+    if (isset($link['url']) && $token_service->scan($link['url'])) {
+      // Save original link information into options.
+      // Then it can be used in _mix_preprocess_menu_item() and other functions.
+      $link['options']['mix']['menu_token'] = [
+        'url' => $link['url'],
+      ];
+
+      // Replace route_name and url to avoid 'has no corresponding route' error.
+      // @see Drupal\Core\Url::getRouteName()
+      $link['url'] = NULL;
+      $link['route_name'] = '<none>';
+    }
+  }
+
 }
 
 /**
@@ -433,11 +488,23 @@ function _mix_preprocess_menu_item(&$variables, &$items) {
 
   $currentUserRoles = \Drupal::currentUser()->getRoles();
 
+  $token_service = \Drupal::token();
+
   foreach ($items as $id => &$item) {
+
+    // Replace title if it contains token.
+    // @see mix_link_alter().
+    if ($token_service->scan($item['title'])) {
+      $item['title'] = $token_service->replace($item['title']);
+    }
+
+    // Set url options.
     if (strpos($id, 'menu_link_content:') === 0) {
       $options = $item['url']->getOption('mix');
     }
     else {
+      // @TBD Replace the State API? Use K-V, storage, config or other methods
+      // to make deployment easier.
       $advancedSettings = \Drupal::state()->get('mix.menu_settings.' . $id);
       if ($advancedSettings) {
         $item['url']->setOptions($advancedSettings + $item['url']->getOptions());
