@@ -10,7 +10,7 @@ use Drupal\Tests\BrowserTestBase;
  *
  * @group mix
  */
-class MixMenuTestBase extends BrowserTestBase {
+abstract class MixMenuTestBase extends BrowserTestBase {
 
   /**
    * {@inheritdoc}
