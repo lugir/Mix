@@ -7,9 +7,14 @@
 
 use Drupal\block\BlockInterface;
 use Drupal\block\Entity\Block;
+use Drupal\Component\Render\FormattableMarkup;
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\image\Entity\ImageStyle;
 use Drupal\user\Entity\Role;
 
 /**
@@ -284,8 +289,30 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
   }
   // menu_link_content_menu_link_content_form - for menu_link_content.
   elseif ($form_id == 'menu_link_content_menu_link_content_form') {
+
+    // Load link options.
     $menu_link = $form_state->getFormObject()->getEntity();
     $menu_link_options = $menu_link->link->options;
+
+    $form['mix_menu_token'] = [
+      '#title' => t('Menu token'),
+      '#type' => 'checkbox',
+      '#description' => t('Allow to use tokens ([current-user:xxx], [site:xxx]) in Menu link title and Link.') . '<br>' . t('Provided by Mix module.'),
+      '#default_value' => TRUE,
+      '#disabled' => TRUE,
+      // Show this just under menu title field.
+      // See MenuLinkContent::baseFieldDefinitions().
+      '#weight' => -4,
+    ];
+
+    $form['mix_allow_html'] = [
+      '#type' => 'checkbox',
+      '#title' => t('Allow HTML'),
+      '#description' => t('Allow to use HTML in Menu link title.') . '<br>' . t('Provided by Mix module.'),
+      '#default_value' => $menu_link_options['mix']['allow_html'] ?? FALSE,
+      '#weight' => -4,
+    ];
+
     // Add an additional function to save options.
     $form['#entity_builders']['mix'] = 'mix_menu_link_content_form_entity_builder';
   }
@@ -398,6 +425,7 @@ function _mix_build_menu_link_options(array &$form, FormStateInterface $form_sta
     'mix' => [
       'roles' => $form_state->getValue('mix_advanced')['roles'],
       'container_attributes' => $form_state->getValue('mix_advanced')['container_attributes'],
+      'allow_html' => $form_state->getValue('mix_allow_html'),
     ],
     // These attributes will apply to the menu link by core.
     'attributes' => $attributes,
@@ -434,13 +462,19 @@ function mix_menu_link_content_form_entity_builder($entity_type, $menu_link, &$f
  */
 function mix_link_alter(&$variables) {
 
-  // Replace menu token.
-  if (isset($variables['options']['mix']['menu_token'])) {
-    $token_service = \Drupal::token();
+  // Check if allow HTML in this link.
+  $allowHtml = $variables['options']['mix']['allow_html'] ?? FALSE;
 
-    // Support simple tokens which don't need $data.
-    // like [site:xxx], [date:xxx]，[current-user:xxx] and so on.
-    // @TBD: Support [user:xxx], [node:xxx]? Which need to pass $data.
+  $token_service = \Drupal::token();
+
+  // Replace menu token in Url.
+  if (isset($variables['options']['mix']['menu_token']['url'])) {
+
+    // Support simple tokens like [current-user:xxx], [site:xxx], [date:xxx].
+    // which don't need to pass $data manually.
+    //
+    // @TBD: Support [user:xxx], [node:xxx] and more?
+    //
     // Get url from options and replace tokens.
     $tokenUrl = str_replace('base:', '/', $variables['options']['mix']['menu_token']['url']);
     $url = $token_service->replace($tokenUrl);
@@ -448,6 +482,18 @@ function mix_link_alter(&$variables) {
     $urlObject = Url::fromUserInput($url, $variables['options']);
     // Use new Url object.
     $variables['url'] = $urlObject;
+  }
+
+  // Set $allowHtml to TRUE if menu title contains string prefix of
+  // token [current-user:picture] or [current-user:picture:xxx].
+  if (isset($variables['options']['mix']['menu_token']['title'])
+    && strpos($variables['options']['mix']['menu_token']['title'], '[current-user:picture') !== FALSE) {
+    $allowHtml = TRUE;
+  }
+
+  // Don't escape HTML characters in menu title if $allowHtml is set to TRUE.
+  if ($allowHtml) {
+    $variables['text'] = Markup::create($variables['text']);
   }
 }
 
@@ -465,6 +511,13 @@ function mix_menu_links_discovered_alter(&$links) {
 
   $token_service = \Drupal::token();
   foreach ($links as &$link) {
+
+    if (isset($link['title']) && $token_service->scan($link['title'])) {
+      $link['options']['mix']['menu_token'] = [
+        'title' => $link['title'],
+      ];
+    }
+
     if (isset($link['url']) && $token_service->scan($link['url'])) {
       // Save original link information into options.
       // Then it can be used in _mix_preprocess_menu_item() and other functions.
@@ -477,6 +530,7 @@ function mix_menu_links_discovered_alter(&$links) {
       $link['url'] = NULL;
       $link['route_name'] = '<none>';
     }
+
   }
 
 }
@@ -543,4 +597,62 @@ function _mix_preprocess_menu_item(&$variables, &$items) {
     }
   }
 
+}
+
+/**
+ * Implements hook_token_info().
+ */
+function mix_token_info() {
+  // Add new tokens [current-user:picture] and
+  // [current-user:picture:image-style] to display user picture.
+  // Change 'picture' to 'mix-picture' if it conflicts with core token
+  // in the future.
+  $user['picture'] = [
+    'name' => t('User picture') . ' ' . t('(Provided by Mix module)'),
+  ];
+
+  return [
+    'tokens' => ['user' => $user],
+  ];
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function mix_tokens($type, $tokens, array $data, array $options, BubbleableMetadata $bubbleable_metadata) {
+
+  $token_service = \Drupal::token();
+
+  $replacements = [];
+
+  if ($type == 'user' && !empty($data['user'])) {
+    $user = $data['user'];
+
+    foreach ($tokens as $token_name => $token_str) {
+
+      // Handle token [user:picture].
+      if ($token_name == 'picture' && $file = $user->user_picture->entity) {
+        // Use markup to prevent HTML escaped.
+        $picture = Markup::create('<img src="' . $file->createFileUrl() . '" alt="' . $user->getDisplayName() . '"  />');
+        $replacements[$token_str] = $picture;
+      }
+
+      // Handle token [user:picture:image-style].
+      if (($sub_tokens = $token_service->findWithPrefix($tokens, 'picture')) && ($file = $user->user_picture->entity)) {
+        foreach ($sub_tokens as $imagestyle_name => $sub_token_str) {
+          if ($imagestyle = ImageStyle::load($imagestyle_name)) {
+            // Build picture url with image style.
+            $src = $imagestyle->buildUrl($file->getFileUri());
+            // Use markup to prevent HTML escaped.
+            $picture = Markup::create('<img src="' . $src . '" alt="' . $user->getDisplayName() . '"  />');
+            $replacements[$sub_token_str] = $picture;
+          }
+        }
+      }
+
+    }
+
+  }
+
+  return $replacements;
 }

@@ -2,32 +2,12 @@
 
 namespace Drupal\Tests\mix\Functional;
 
-use Drupal\system\Entity\Menu;
-use Drupal\Tests\BrowserTestBase;
-
 /**
  * Tests advanced menu settings.
  *
  * @group mix
  */
-class MixAdvancedMenuItemTest extends BrowserTestBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  protected $defaultTheme = 'stark';
-
-  /**
-   * {@inheritdoc}
-   */
-  protected static $modules = ['block', 'menu_ui', 'menu_link_content', 'mix'];
-
-  /**
-   * Array of placed menu blocks keyed by block ID.
-   *
-   * @var array
-   */
-  protected $blockPlacements;
+class MixMenuItemAdvancedTest extends MixMenuTestBase {
 
   /**
    * {@inheritdoc}
@@ -40,7 +20,7 @@ class MixAdvancedMenuItemTest extends BrowserTestBase {
   /**
    * Tests menu item visibility by role.
    */
-  public function testMenuItemRoleAccess() {
+  public function testMenuItemPerRole() {
 
     // Hierarchy
     // <$menu>
@@ -134,64 +114,29 @@ class MixAdvancedMenuItemTest extends BrowserTestBase {
     ];
     $this->addMenuLink('', 'item2', '/', $menu->id(), TRUE, 0, $advancedSettings);
 
-    // Test menu link attributes.
+    // Test menu link and container's attributes.
     $this->assertSession()->elementExists('xpath', '//li[contains(@id, "item2_container")]');
     $this->assertSession()->elementExists('xpath', '//li[contains(@class, "item2_container_wrapper")]');
     $this->assertSession()->elementExists('xpath', '//a[contains(@id, "item2")]');
     $this->assertSession()->elementExists('xpath', '//a[contains(@class, "item2__link")]');
     $this->assertSession()->elementExists('css', 'li[id="item2_container"] a[id="item2"]');
     $this->assertSession()->elementExists('css', 'a[id="item2"][target="_blank"]');
-
-    // Test menu link container attributes.
   }
 
   /**
-   * Creates a custom menu.
-   *
-   * @return \Drupal\system\Entity\Menu
-   *   The custom menu that has been created.
+   * Tests the "Allow HTML" setting for menu item.
    */
-  public function addCustomMenu() {
-    // Add a custom menu.
-    $this->drupalGet('admin/structure/menu/add');
-    $menu_name = strtolower($this->randomMachineName());
-    $label = $this->randomMachineName();
-    $edit = [
-      'id' => $menu_name,
-      'description' => '',
-      'label' => $label,
-    ];
-    $this->submitForm($edit, 'Save');
+  public function testMenuItemAllowHtml() {
+    $menu = $this->addCustomMenu();
 
-    // Enable the block.
-    $block = $this->drupalPlaceBlock('system_menu_block:' . $menu_name);
-    $this->blockPlacements[$menu_name] = $block->id();
+    // Test HTML title without "Allow HTML" enabled.
+    $this->addMenuLink('', '<em>Bold Title</em>', '/', $menu->id(), TRUE, 0);
+    $this->assertSession()->responseNotContains('<em>Bold Title</em>');
 
-    return Menu::load($menu_name);
-  }
-
-  /**
-   * Add a menu link.
-   */
-  public function addMenuLink($parent = '', $title = 'link', $path = '/', $menu_name = 'custom', $expanded = FALSE, $weight = 0, $advancedSettings = []) {
-    // Go to add menu link page.
-    $this->drupalGet("admin/structure/menu/manage/$menu_name/add");
-    $edit = [
-      'link[0][uri]' => $path,
-      'title[0][value]' => $title,
-      'description[0][value]' => '',
-      'enabled[value]' => 1,
-      'expanded[value]' => $expanded,
-      'menu_parent' => $menu_name . ':' . $parent,
-      'weight[0][value]' => $weight,
-    ];
-    $edit += $advancedSettings;
-
-    $this->submitForm($edit, 'Save');
-
-    $menu_links = \Drupal::entityTypeManager()->getStorage('menu_link_content')->loadByProperties(['title' => $title]);
-    $menu_link = reset($menu_links);
-    return $menu_link;
+    // Test HTML title with "Allow HTML" enabled.
+    $formValues = ['mix_allow_html' => 1];
+    $this->addMenuLink('', '<strong>Bold Title</strong>', '/', $menu->id(), TRUE, 0, $formValues);
+    $this->assertSession()->responseContains('<strong>Bold Title</strong>');
   }
 
 }
