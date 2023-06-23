@@ -297,7 +297,8 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
     $form['mix_menu_token'] = [
       '#title' => t('Menu token'),
       '#type' => 'checkbox',
-      '#description' => t('Allow to use tokens ([current-user:xxx], [site:xxx]) in Menu link title and Link.') . '<br>' . t('Provided by Mix module.'),
+      '#description' => t('Allow to use tokens ([current-user:xxx], [site:xxx]) in Menu link title and Link. See the <a href=":url">online documentation</a> for avaiable tokens.', [':url' => 'https://www.drupal.org/docs/extending-drupal/contributed-modules/contributed-module-documentation/mix/menu-token']) . '<br>'
+      . t('Provided by Mix module.'),
       '#default_value' => TRUE,
       '#disabled' => TRUE,
       // Show this just under menu title field.
