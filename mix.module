@@ -513,17 +513,13 @@ function mix_menu_links_discovered_alter(&$links) {
   foreach ($links as &$link) {
 
     if (isset($link['title']) && $token_service->scan($link['title'])) {
-      $link['options']['mix']['menu_token'] = [
-        'title' => $link['title'],
-      ];
+      $link['options']['mix']['menu_token']['title'] = $link['title'];
     }
 
     if (isset($link['url']) && $token_service->scan($link['url'])) {
       // Save original link information into options.
       // Then it can be used in _mix_preprocess_menu_item() and other functions.
-      $link['options']['mix']['menu_token'] = [
-        'url' => $link['url'],
-      ];
+      $link['options']['mix']['menu_token']['url'] = $link['url'];
 
       // Replace route_name and url to avoid 'has no corresponding route' error.
       // @see Drupal\Core\Url::getRouteName()
