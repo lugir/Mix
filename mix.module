@@ -7,13 +7,12 @@
 
 use Drupal\block\BlockInterface;
 use Drupal\block\Entity\Block;
-use Drupal\Component\Render\FormattableMarkup;
-use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\BubbleableMetadata;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
+use Drupal\field\Entity\FieldConfig;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\user\Entity\Role;
 
@@ -628,22 +627,20 @@ function mix_tokens($type, $tokens, array $data, array $options, BubbleableMetad
     foreach ($tokens as $token_name => $token_str) {
 
       // Handle token [user:picture].
-      if ($token_name == 'picture' && $file = $user->user_picture->entity) {
+      if ($token_name == 'picture') {
+        $user_picture = mix_get_user_picture($user);
         // Use markup to prevent HTML escaped.
-        $picture = Markup::create('<img src="' . $file->createFileUrl() . '" alt="' . $user->getDisplayName() . '"  />');
-        $replacements[$token_str] = $picture;
+        $markup = Markup::create('<img src="' . $user_picture . '" alt="' . $user->getDisplayName() . '"  />');
+        $replacements[$token_str] = $markup;
       }
 
-      // Handle token [user:picture:image-style].
-      if (($sub_tokens = $token_service->findWithPrefix($tokens, 'picture')) && ($file = $user->user_picture->entity)) {
+      // Handle token [user:picture:?].
+      if ($sub_tokens = $token_service->findWithPrefix($tokens, 'picture')) {
         foreach ($sub_tokens as $imagestyle_name => $sub_token_str) {
-          if ($imagestyle = ImageStyle::load($imagestyle_name)) {
-            // Build picture url with image style.
-            $src = $imagestyle->buildUrl($file->getFileUri());
-            // Use markup to prevent HTML escaped.
-            $picture = Markup::create('<img src="' . $src . '" alt="' . $user->getDisplayName() . '"  />');
-            $replacements[$sub_token_str] = $picture;
-          }
+          $user_picture = mix_get_user_picture($user, $imagestyle_name);
+          // Use markup to prevent HTML escaped.
+          $markup = Markup::create('<img src="' . $user_picture . '" alt="' . $user->getDisplayName() . '"  />');
+          $replacements[$sub_token_str] = $markup;
         }
       }
 
@@ -652,4 +649,35 @@ function mix_tokens($type, $tokens, array $data, array $options, BubbleableMetad
   }
 
   return $replacements;
+}
+
+/**
+ * Get the user picture of the given user.
+ */
+function mix_get_user_picture($account, $imagestyle_name = NULL) {
+  // Try user uploaded picture.
+  $file = $account->user_picture->entity;
+
+  if (!$file) {
+    // Try default picture of user_picture field.
+    $field_info = FieldConfig::loadByName('user', 'user', 'user_picture');
+    $settings = $field_info->getSetting('default_image');
+    if (isset($settings['uuid'])) {
+      $file = Drupal::service('entity.repository')->loadEntityByUuid('file', $settings['uuid']);
+    }
+  }
+
+  // Use drupal logo if no user uploaded picture or a default picture.
+  if (!$file) {
+    $baseurl = Url::fromRoute('<front>', [], ['absolute' => TRUE])->toString();
+    return $baseurl . 'core/misc/logo/drupal-logo.svg';
+  }
+
+  // Build picture url if not use the Mix default user picture.
+  if ($imagestyle_name && $imagestyle = ImageStyle::load($imagestyle_name)) {
+    return $imagestyle->buildUrl($file->getFileUri());
+  }
+  else {
+    return $file->createFileUrl();
+  }
 }
