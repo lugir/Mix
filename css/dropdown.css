@@ -57,6 +57,13 @@
   width: 100%;
 }
 
+.mix-dropdown li .menu-item > a,
+.mix-dropdown li .menu-item > span,
+.mix-dropdown li .menu-item > button {
+  flex-grow: 1;
+  padding: 0 0.5rem;
+}
+
 .mix-dropdown li .menu-item-link {
   display: block;
 }
