@@ -284,7 +284,7 @@ function mix_form_menu_link_content_form_alter(&$form, FormStateInterface $form_
   if ($form_id == 'menu_link_edit') {
     $menu_link_options = \Drupal::state()->get('mix.menu_settings.' . $form['menu_link_id']['#value']);
     // Add custom submit callback.
-    $form['#submit'][] = 'mix_menu_link_edit_submit';
+    $form['actions']['submit']['#submit'][] = 'mix_menu_link_edit_submit';
   }
   // menu_link_content_menu_link_content_form - for menu_link_content.
   elseif ($form_id == 'menu_link_content_menu_link_content_form') {
