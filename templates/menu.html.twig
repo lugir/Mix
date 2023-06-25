@@ -50,8 +50,7 @@
       <li{{ item.attributes }}>
         {% set checkbox_id = 'mix-dropdown-toggle-' ~ i|replace({":": "-", ".": "-"}) %}
         <div class="menu-item">
-          {% set menu_item_class = item.url.routeName not in ['<nolink>', '<button>'] ? 'menu-item-link' : 'menu-item-other' %}
-          {{ link(item.title, item.url, { class: menu_item_class }) }}
+          {{ link(item.title, item.url) }}
           {# Dropdown toggle #}
           {% if item.below %}
           <label for="{{ checkbox_id }}" class="mix-dropdown-toggle"><span class="mix-icon-toggle"></span></label>
