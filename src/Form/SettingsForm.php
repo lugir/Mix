@@ -239,11 +239,12 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
       '#type' => 'details',
     ];
 
+    $content_sync_ids = $config->get('content_sync_ids') ?: [];
     $form['content_sync']['advanced']['content_sync_ids'] = [
       '#title' => $this->t('Content sync IDs'),
       '#type' => 'textarea',
       '#description' => $this->t('One content sync ID per line.'),
-      '#default_value' => implode(PHP_EOL, $config->get('content_sync_ids')),
+      '#default_value' => implode(PHP_EOL, $content_sync_ids),
       '#prefix' => '<div class="form-item__description">' . $this->t('Content Sync ID will be added/removed from the following textarea automatically when you selected/unselected an item to sync in the content list pages (e.g. block, menu link and term list pages). <br>
 You can also edit it manually.') . '</div>',
     ];
@@ -257,6 +258,41 @@ You can also edit it manually.') . '</div>',
     if (!Mix::isContentSyncEnabled()) {
       $form['content_sync']['content_sync_generate_content']['#disabled'] = TRUE;
     }
+    // Configuration management section.
+    $form['cm'] = [
+      '#type' => 'details',
+      '#title' => $this->t('Configuration Management'),
+      '#open' => TRUE,
+    ];
+
+    $form['cm']['config_import_ignore_mode'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable config import ignore'),
+      '#description' => $this->t('By enabling this on the Prod site, you can ignore Dev modules and configurations to be imported, and use it for configurations override.<br>
+For more details please see the <a href="https://www.drupal.org/docs/contributed-modules/mix/config-import-ignore" target="_blank">online documentation</a>.'),
+      '#default_value' => $config->get('config_import_ignore.mode'),
+    ];
+
+    $form['cm']['config_import_ignore_list'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('Ignored configuration items'),
+      '#description' => $this->t('One item per line.<br>
+# To ignore a dev-related module and configurations to be enabled on the Prod site.<br>
+<code>core.extenstion:module.devel</code><br>
+<code>devel.settings</code><br>
+# To ignore or override a configuration item, use the format: <em>config_name:key</em><br>
+<code>mix.settings:dev_mode</code><br>
+<code>system.site:page.front</code><br>
+# To ignore or override an entire configuration, use the format: <em>config_name</em><br>
+<code>system.site</code>
+'),
+      '#states' => [
+        'visible' => [
+          ':input[name="config_import_ignore_mode"]' => ['checked' => TRUE],
+        ],
+      ],
+      '#default_value' => implode(PHP_EOL, $config->get('config_import_ignore.list')),
+    ];
 
     $form['error_pages'] = [
       '#type' => 'details',
@@ -307,6 +343,11 @@ You can also edit it manually.') . '</div>',
     $content_sync_ids = array_map('trim', explode(PHP_EOL, $form_state->getValue('content_sync_ids')));
     MixContentSyncController::presave($content_sync_ids);
 
+    // @todo Refactor to a reusable function or method.
+    $config_import_ignore_list = explode(PHP_EOL, $form_state->getValue('config_import_ignore_list'));
+    $config_import_ignore_list = array_filter(array_map('trim', $config_import_ignore_list));
+    sort($config_import_ignore_list);
+
     // Save config.
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
@@ -316,6 +357,8 @@ You can also edit it manually.') . '</div>',
       ->set('error_page.content', $form_state->getValue('error_page_content'))
       ->set('show_content_sync_id', $form_state->getValue('show_content_sync_id'))
       ->set('content_sync_ids', $content_sync_ids)
+      ->set('config_import_ignore.mode', $form_state->getValue('config_import_ignore_mode'))
+      ->set('config_import_ignore.list', $config_import_ignore_list)
       ->save();
 
     // @todo Clear related caches when the setting of "Show content sync ID"

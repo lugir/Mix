@@ -20,6 +20,9 @@ mix.settings:
       label: 'List of content configuration names'
       sequence:
         type: string
+    register_password:
+      type: boolean
+      label: 'Register password'
     error_page:
       type: mapping
       label: 'Error page settings'
@@ -30,3 +33,26 @@ mix.settings:
         content:
           type: string
           label: 'Error page content'
+    config_import_ignore:
+      type: mapping
+      label: 'Config import ignore'
+      mapping:
+        mode:
+          type: boolean
+          label: 'Enable config import ignore'
+        list:
+          type: sequence
+          label: 'Ignored config names'
+          sequence:
+            type: string
+
+block.block.*.third_party.mix:
+  type: mapping
+  label: Block third party settings
+  mapping:
+    class:
+      type: string
+      label: Block class(es)
+    dropdown:
+      type: boolean
+      label: Dropdown
