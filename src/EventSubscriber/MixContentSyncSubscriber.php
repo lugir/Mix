@@ -56,10 +56,8 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
   public static function getSubscribedEvents() {
     $events = [];
     // Only react to events when the feature is enabled.
-    if (Mix::isContentSyncEnabled()) {
-      $events[ConfigEvents::STORAGE_TRANSFORM_EXPORT][] = ['onExportTransform'];
-      $events[ConfigEvents::STORAGE_TRANSFORM_IMPORT][] = ['onImportTransform'];
-    }
+    $events[ConfigEvents::STORAGE_TRANSFORM_EXPORT][] = ['onExportTransform'];
+    $events[ConfigEvents::STORAGE_TRANSFORM_IMPORT][] = ['onImportTransform'];
     return $events;
   }
 
@@ -70,6 +68,10 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
    *   The config storage transform event.
    */
   public function onExportTransform(StorageTransformEvent $event) {
+
+    if (!Mix::isContentSyncEnabled()) {
+      return;
+    }
 
     /** @var \Drupal\Core\Config\StorageInterface $storage */
     $storage = $event->getStorage();
@@ -93,7 +95,22 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
       // Seems the core will ignore the numeric IDs when create new entity
       // in the import process. So we don't remove entity id and other numeric
       // IDs after the normalization.
-      $array = $this->serializer->normalize($contentEntity);
+      $normalizedContentEntity = $this->serializer->normalize($contentEntity);
+
+      // @see block.info.yml
+      // @see menu_link_content.info.yml
+      // @see taxonomy.info.yml
+      $dependencies = [
+        'block_content'     => ['module' => ['block', 'text', 'user']],
+        'menu_link_content' => ['module' => ['link']],
+        'taxonomy_term' => ['module' => ['node', 'text']],
+      ];
+
+      $array = [
+        'uuid' => $uuid,
+        'dependencies' => $dependencies[$entityType],
+        'entity' => $normalizedContentEntity,
+      ];
 
       // Save normalized content entity into config file.
       $storage->write($configName, $array);
@@ -108,6 +125,10 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
    *   The config storage transform event.
    */
   public function onImportTransform(StorageTransformEvent $event) {
+
+    if (!Mix::isContentSyncEnabled()) {
+      return;
+    }
 
     /** @var \Drupal\Core\Config\StorageInterface $storage */
     $storage = $event->getStorage();
