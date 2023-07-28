@@ -73,7 +73,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
 
     // Assert the sync link.
     $this->drupalGet('admin/structure/block/block-content');
-    $this->assertSession()->linkExists('Add to content sync');
+    $this->assertSession()->linkExists('No');
 
     // Add UUID.
     $block = BlockContent::load(1);
@@ -88,7 +88,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
 
     // Assert the stop sync link.
     $this->drupalGet('admin/structure/block/block-content');
-    $this->assertSession()->linkExists('Stop sync');
+    $this->assertSession()->linkExists('Yes');
 
     // Assign and assert block.
     $this->drupalPlaceBlock('block_content:' . $block->uuid());
@@ -121,7 +121,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
 
     // Generate block.
     $this->drupalGet('admin/config/mix');
-    $this->submitForm([], 'Generate content');
+    $this->submitForm([], 'Generate missing contents');
     $this->assertSession()->pageTextContains('was generated successfully.');
 
     // Block content shows up.

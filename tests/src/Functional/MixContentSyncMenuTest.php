@@ -140,7 +140,7 @@ class MixContentSyncMenuTest extends MenuUiTest {
 
     // Assert the sync link.
     $this->drupalGet('admin/structure/menu/manage/' . $menu_id);
-    $this->assertSession()->linkExists('Add to content sync');
+    $this->assertSession()->linkExists('No');
 
     // Add UUID.
     $id1 = 'menu_link_content.' . $item1->uuid();
@@ -158,7 +158,7 @@ class MixContentSyncMenuTest extends MenuUiTest {
 
     // Assert the stop sync link.
     $this->drupalGet('admin/structure/menu/manage/' . $menu_id);
-    $this->assertSession()->linkExists('Stop sync');
+    $this->assertSession()->linkExists('Yes');
 
     // Export the configuration.
     // @see ConfigExportImportUITest::testExportImport().
@@ -184,7 +184,7 @@ class MixContentSyncMenuTest extends MenuUiTest {
 
     // Generate content.
     $this->drupalGet('admin/config/mix');
-    $this->submitForm([], 'Generate content');
+    $this->submitForm([], 'Generate missing contents');
     $this->assertSession()->pageTextContains('was generated successfully.');
 
     // Block content shows up.

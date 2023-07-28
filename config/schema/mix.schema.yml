@@ -56,3 +56,21 @@ block.block.*.third_party.mix:
     dropdown:
       type: boolean
       label: Dropdown
+
+block_content.*:
+  type: config_entity
+  label: Block content as config
+  mapping:
+    entity:
+      type: ignore
+      label: Normalized entity.
+
+menu_link_content.*:
+  type: config_entity
+  label: Menu link content as config
+  mapping:
+    entity:
+      type: ignore
+      label: Normalized entity.
+
+
