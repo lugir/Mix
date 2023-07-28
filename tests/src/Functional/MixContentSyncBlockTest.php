@@ -77,7 +77,7 @@ class MixContentSyncBlockTest extends BlockContentTestBase {
 
     // Add UUID.
     $block = BlockContent::load(1);
-    $content_sync_id = 'block_content.' . $block->bundle() . '.' . $block->uuid();
+    $content_sync_id = 'mix.content_sync.block_content.' . $block->bundle() . '.' . $block->uuid();
     $config->set('content_sync_ids', [$content_sync_id])->save();
     // Clear cache to update the sync link in block list.
     drupal_flush_all_caches();

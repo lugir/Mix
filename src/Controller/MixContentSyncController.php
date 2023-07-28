@@ -4,6 +4,7 @@ namespace Drupal\mix\Controller;
 
 use Drupal\Core\Ajax\AjaxResponse;
 use Drupal\Core\Ajax\ReplaceCommand;
+use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\mix\EventSubscriber\MixContentSyncSubscriber;
@@ -70,6 +71,12 @@ class MixContentSyncController extends ControllerBase {
     $selector = '#mix-content-sync-' . $uuid;
     $content = self::getAjaxLink($content_sync_id);
     $ajaxResponse->addCommand(new ReplaceCommand($selector, $content));
+
+    // Clear block content view caches.
+    $tags = [
+      'config:views.view.block_content',
+    ];
+    Cache::invalidateTags($tags);
 
     return $ajaxResponse;
   }

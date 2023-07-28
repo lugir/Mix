@@ -154,6 +154,7 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
    * Parse entity type from config name.
    */
   public static function parseEntityType($configName) {
+    $configName = str_replace('mix.content_sync.', '', $configName);
     if (strpos($configName, 'taxonomy.term.') === 0) {
       $entityType = 'taxonomy_term';
     }

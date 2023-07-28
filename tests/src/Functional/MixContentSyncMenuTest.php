@@ -143,9 +143,9 @@ class MixContentSyncMenuTest extends MenuUiTest {
     $this->assertSession()->linkExists('No');
 
     // Add UUID.
-    $id1 = 'menu_link_content.' . $item1->uuid();
-    $id2 = 'menu_link_content.' . $item2->uuid();
-    $id3 = 'menu_link_content.' . $item3->uuid();
+    $id1 = 'mix.content_sync.menu_link_content.' . $item1->uuid();
+    $id2 = 'mix.content_sync.menu_link_content.' . $item2->uuid();
+    $id3 = 'mix.content_sync.menu_link_content.' . $item3->uuid();
     $config->set('content_sync_ids', [$id1, $id2, $id3])->save();
     // Clear cache to update the sync link in menu item list.
     drupal_flush_all_caches();
