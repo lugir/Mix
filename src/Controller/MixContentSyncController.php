@@ -75,6 +75,17 @@ class MixContentSyncController extends ControllerBase {
   }
 
   /**
+   * Get content sync widget.
+   *
+   * @param string $content_sync_id
+   *   Content sync ID.
+   */
+  public static function getWidget(string $content_sync_id) {
+    $output = '<span class="form-item__description">(Export as config: ' . self::getAjaxLink($content_sync_id) . ')</span>';
+    return $output;
+  }
+
+  /**
    * Get content sync ajax link to operate content sync IDs.
    *
    * @param string $content_sync_id
@@ -87,11 +98,11 @@ class MixContentSyncController extends ControllerBase {
     $content_sync_ids = \Drupal::config('mix.settings')->get('content_sync_ids');
     if (!in_array($content_sync_id, $content_sync_ids)) {
       $action = 'add';
-      $linkText = t('Add to content sync');
+      $linkText = t('No');
     }
     else {
       $action = 'remove';
-      $linkText = t('Stop sync');
+      $linkText = t('Yes');
     }
 
     $ajaxLink = '<a id="' . $id . '" href="/api/mix/content-sync/' . $content_sync_id . '/' . $action . '" class="use-ajax">' . $linkText . '</a></span>';
