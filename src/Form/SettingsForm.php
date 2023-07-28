@@ -187,8 +187,20 @@ class SettingsForm extends ConfigFormBase {
     ];
 
     $form['content_sync'] = [
-      '#title' => $this->t('Content synchronize') . '<sup>' . $this->t('(Beta)') . '</sup>',
+      '#title' => $this->t('Content synchronization') . '<sup>' . $this->t('(Beta)') . '</sup>',
       '#type' => 'details',
+    ];
+
+    $form['content_sync']['show_content_sync_id'] = [
+      '#title' => $this->t('Enable content synchronization'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('show_content_sync_id'),
+      '#description' => $this->t('Enable content synchronization to allow entity content to be sync like configurations and show links in content management pages.
+        <ul>
+          <li>Block - admin/structure/block/block-content</li>
+          <li>Menu links - admin/structure/menu/manage/[menu-name]</li>
+          <li>Taxonomy terms - admin/structure/taxonomy/manage/[taxonomy]/overview</li>
+        </ul>'),
     ];
 
     $form['content_sync']['description_container'] = [
@@ -198,34 +210,22 @@ class SettingsForm extends ConfigFormBase {
 
     $form['content_sync']['description_container']['description'] = [
       '#markup' => $this->t('By default, Drupal only synchronizes configurations between environments, not content.<br>
-When we synchronize a block, the block content will not be synchronized, and you will get an error message "This block is broken or missing."<br>
+When we synchronize a block, only block config will be synchronized, not the block content, so you will get an error message about "This block is broken or missing."<br>
 With this "Content Synchronize", we can synchronize selected content (blocks, menu links, taxonomy terms, etc.) between environments.<br>
 <strong>Usage</strong>
 <ul>
   <li>Enable the "Show content sync ID" below.</li>
-  <li>Go to content list page, copy the content sync ID to the "Content sync IDs" textarea below.</li>
-      <ul>
-        <li>Block - admin/structure/block/block-content</li>
-        <li>Menu links - admin/structure/menu/manage/[menu-name]</li>
-        <li>Taxonomy terms - admin/structure/taxonomy/manage/[taxonomy-name]/overview</li>
-      </ul>
+  <li>Go to content list page, find "Export as config" and click the link to choose an item.</li>
   <li>Export configurations by Config export page or <code>drush cex</code> from Dev site.</li>
   <li>Import configurations by Config import page or <code>drush cim</code> to Prod site.</li>
-  <li>Click the "Generate content" button below.</li>
+  <li>Click the "Generate missing content" button below to create non-existent contents.</li>
 </ul>
 Note: To avoid unexpected content updates, only non-existent content will be created by now.'),
     ];
 
-    $form['content_sync']['show_content_sync_id'] = [
-      '#title' => $this->t('Show content sync ID'),
-      '#type' => 'checkbox',
-      '#default_value' => $config->get('show_content_sync_id'),
-      '#description' => $this->t('Show the content sync ID in content (blocks, menu links, taxonomy terms, etc.) management pages'),
-    ];
-
     if (!Mix::isContentSyncReady()) {
       $moduleListUrl = $this->urlGenerator->generate('system.modules_list');
-      $form['content_sync']['show_content_sync_id']['#prefix'] = '<div class="mix-box mix-warning">' . $this->t('Please check if the core module <a href="@config" target="_blank">Configuration Manager</a> and <a href="@serialization" target="_blank">Serialization</a> were both enabled before you can use Content Sync.', [
+      $form['content_sync']['show_content_sync_id']['#prefix'] = '<div class="mix-box mix-warning">' . $this->t('Please check if the core module <a href="@config" target="_blank">Configuration Manager</a> and <a href="@serialization" target="_blank">Serialization</a> were both enabled before you can use this feature.', [
         '@config' => $moduleListUrl . '#module-config',
         '@serialization' => $moduleListUrl . '#module-serialization',
       ]) . '</div>';
@@ -249,10 +249,9 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
 You can also edit it manually.') . '</div>',
     ];
 
-    // @todo Disable this button if no content to generate.
     $form['content_sync']['content_sync_generate_content'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Generate content'),
+      '#value' => $this->t('Generate missing contents'),
       '#submit' => [[$this, 'generateContentSubmit']],
     ];
     if (!Mix::isContentSyncEnabled()) {
@@ -348,6 +347,13 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
     $config_import_ignore_list = array_filter(array_map('trim', $config_import_ignore_list));
     sort($config_import_ignore_list);
 
+    // Clear caches if 'show_content_sync_id' value changes.
+    $oldContentSyncMode = $config->get('show_content_sync_id');
+    $newContentSyncMode = $form_state->getValue('show_content_sync_id');
+    if ($oldContentSyncMode != $newContentSyncMode) {
+      $rebuildCache = TRUE;
+    }
+
     // Save config.
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
@@ -361,8 +367,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
       ->set('config_import_ignore.list', $config_import_ignore_list)
       ->save();
 
-    // @todo Clear related caches when the setting of "Show content sync ID"
-    // is changed.
+    // Clear caches if 'show_form_id' value changes.
     $oldShowFormId = $this->state->get('mix.show_form_id');
     $newShowFormId = $form_state->getValue('show_form_id');
     if ($oldShowFormId != $newShowFormId) {
@@ -436,22 +441,33 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
       // Ignore generate content which already tried multiple times.
       // Show an warning message.
       if ($reququeCounter[$configName] > 5) {
-        $this->messenger()->addWarning($this->t('Failed to generate content: @config_name', ['@config_name' => $configName]));
+        $this->messenger()->addWarning($this->t('Failed to generate @entity_type: @config_name', [
+          '@entity_type' => $entityType,
+          '@config_name' => $configName,
+        ]));
         continue;
       }
 
       // Load entity.
       $uuid = substr($configName, strrpos($configName, '.') + 1);
       $existedEntity = \Drupal::service('entity.repository')->loadEntityByUuid($entityType, $uuid);
-      $contentArray = $activeStorage->read($configName);
+      // Load config.
+      $config = $activeStorage->read($configName);
+      // Get normalized content.
+      // @see MixContentSyncSubscriber::onExportTransform()
+      $entityArray = $config['entity'];
       // Only generate non-existent content.
-      if (!$existedEntity && $contentArray) {
+      if (!$existedEntity && $entityArray) {
         try {
           $serializer = \Drupal::service('serializer');
-          $entity = $serializer->denormalize($contentArray, MixContentSyncSubscriber::$supportedEntityTypeMap[$entityType], 'yaml');
+          $entity = $serializer->denormalize($entityArray, MixContentSyncSubscriber::$supportedEntityTypeMap[$entityType], 'yaml');
           $created = $entity->save();
           if ($created === SAVED_NEW) {
-            $this->messenger()->addStatus($this->t('Content @config_name was generated successfully.', ['@config_name' => $configName]));
+
+            $this->messenger()->addStatus($this->t('@entity_type "@name" was generated successfully.', [
+              '@entity_type' => $entityType,
+              '@name' => $entity->label(),
+            ]));
           }
         }
         catch (\InvalidArgumentException $e) {
