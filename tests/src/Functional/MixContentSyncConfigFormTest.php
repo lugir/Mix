@@ -31,7 +31,7 @@ class MixContentSyncConfigFormTest extends BrowserTestBase {
     $this->drupalGet('admin/config/mix');
 
     // Assert warning message and disabled fields.
-    $this->assertSession()->pageTextContains('before you can use Content Sync.');
+    $this->assertSession()->pageTextContains('Please enable core modules');
     $this->assertSession()->fieldDisabled('edit-show-content-sync-id');
     // The fieldDisabled() seems ot working on button, use
     // elementAttribteExists() instead.
@@ -43,7 +43,7 @@ class MixContentSyncConfigFormTest extends BrowserTestBase {
     // Revisit config page.
     $this->drupalGet('admin/config/mix');
     // No warning message.
-    $this->assertSession()->pageTextNotContains('before you can use Content Sync.');
+    $this->assertSession()->pageTextNotContains('Please enable core modules');
 
     // Assert the default value and field status.
     $this->assertSession()->fieldValueEquals('edit-show-content-sync-id', FALSE);

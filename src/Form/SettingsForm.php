@@ -225,7 +225,7 @@ Note: To avoid unexpected content updates, only non-existent content will be cre
 
     if (!Mix::isContentSyncReady()) {
       $moduleListUrl = $this->urlGenerator->generate('system.modules_list');
-      $form['content_sync']['show_content_sync_id']['#prefix'] = '<div class="mix-box mix-warning">' . $this->t('Please check if the core module <a href="@config" target="_blank">Configuration Manager</a> and <a href="@serialization" target="_blank">Serialization</a> were both enabled before you can use this feature.', [
+      $form['content_sync']['show_content_sync_id']['#prefix'] = '<div class="mix-box mix-warning">' . $this->t('Please enable core modules <a href="@config" target="_blank">Configuration Manager</a> and <a href="@serialization" target="_blank">Serialization</a> before using this feature.', [
         '@config' => $moduleListUrl . '#module-config',
         '@serialization' => $moduleListUrl . '#module-serialization',
       ]) . '</div>';
