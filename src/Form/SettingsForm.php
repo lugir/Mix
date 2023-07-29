@@ -342,6 +342,13 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
     $content_sync_ids = array_map('trim', explode(PHP_EOL, $form_state->getValue('content_sync_ids')));
     MixContentSyncController::presave($content_sync_ids);
 
+    // Invalidate cache when content_sync_ids changed.
+    $oldContentSyncIds = $config->get('content_sync_ids');
+    $contentSyncIdsChanged = $oldContentSyncIds !== $content_sync_ids;
+    if ($contentSyncIdsChanged) {
+      Cache::invalidateTags(['config:views.view.block_content']);
+    }
+
     // @todo Refactor to a reusable function or method.
     $config_import_ignore_list = explode(PHP_EOL, $form_state->getValue('config_import_ignore_list'));
     $config_import_ignore_list = array_filter(array_map('trim', $config_import_ignore_list));
