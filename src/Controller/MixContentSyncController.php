@@ -127,10 +127,12 @@ class MixContentSyncController extends ControllerBase {
     $supportedEntityTypes = array_keys(MixContentSyncSubscriber::$supportedEntityTypeMap);
     // Remove invalid values.
     foreach ($content_sync_ids as $key => $content_sync_id) {
-      $entityType = MixContentSyncSubscriber::parseEntityType($content_sync_id);
-      if (!$entityType || !in_array($entityType, $supportedEntityTypes)) {
-        \Drupal::messenger()->addWarning(t('Remove invalid content sync ID: @content_sync_id', ['@content_sync_id' => $content_sync_id]));
-        unset($content_sync_ids[$key]);
+      if ($content_sync_id) {
+        $entityType = MixContentSyncSubscriber::parseEntityType($content_sync_id);
+        if (!$entityType || !in_array($entityType, $supportedEntityTypes)) {
+          \Drupal::messenger()->addWarning(t('Remove invalid content sync ID: @content_sync_id', ['@content_sync_id' => $content_sync_id]));
+          unset($content_sync_ids[$key]);
+        }
       }
     }
 
