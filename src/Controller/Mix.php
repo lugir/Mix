@@ -33,7 +33,7 @@ class Mix extends ControllerBase {
   public static function isContentSyncEnabled() {
     $configStorage = BootstrapConfigStorageFactory::get();
     $config = $configStorage->read('mix.settings');
-    $show_content_sync_id = isset($config['show_content_sync_id']) ? $config['show_content_sync_id'] : FALSE;
+    $show_content_sync_id = $config['show_content_sync_id'] ?? FALSE;
     $isEnabled = self::isContentSyncReady() && $show_content_sync_id;
     return $isEnabled;
   }

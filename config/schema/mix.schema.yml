@@ -66,7 +66,3 @@ block.block.*.third_party.mix:
     dropdown:
       type: boolean
       label: Dropdown
-
-
-
-
