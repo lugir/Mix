@@ -79,6 +79,7 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
     // Get config names of allowed content.
     $content_sync_ids = \Drupal::config('mix.settings')->get('content_sync_ids');
 
+    // Export as configs.
     foreach ($content_sync_ids as $configName) {
       $uuid = substr($configName, strrpos($configName, '.') + 1);
       // Parse entityType.
@@ -114,6 +115,14 @@ class MixContentSyncSubscriber implements EventSubscriberInterface {
 
       // Save normalized content entity into config file.
       $storage->write($configName, $array);
+    }
+
+    // Delete the config files if contents are removed.
+    $items = $storage->listAll('mix.content_sync');
+    foreach ($items as $item) {
+      if (!in_array($item, $content_sync_ids)) {
+        $storage->delete($item);
+      }
     }
 
   }
