@@ -216,7 +216,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
           ':input[name="config_import_ignore_mode"]' => ['checked' => TRUE],
         ],
       ],
-      '#default_value' => implode(PHP_EOL, $config->get('config_import_ignore.list')),
+      '#default_value' => implode(PHP_EOL, $config->get('config_import_ignore.list') ?? []),
     ];
 
     $form['error_pages'] = [
