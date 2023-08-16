@@ -7,8 +7,13 @@
 
 use Drupal\block\BlockInterface;
 use Drupal\block\Entity\Block;
+use Drupal\Component\Utility\Xss;
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CloseDialogCommand;
+use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\BubbleableMetadata;
+use Drupal\Core\Render\Element\StatusMessages;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
@@ -16,6 +21,7 @@ use Drupal\mix\Controller\MixContentSyncController;
 use Drupal\views\ViewExecutable;
 use Drupal\field\Entity\FieldConfig;
 use Drupal\image\Entity\ImageStyle;
+use Drupal\mix\Controller\Mix;
 use Drupal\user\Entity\Role;
 
 /**
@@ -67,6 +73,46 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
   if ($currentUser->id() != 1 && $hideRevisionField) {
     $form['revision_information']['#access'] = FALSE;
   }
+
+  // Ajax forms.
+  // @see AjaxHelperTrait::isAjax()
+  $isAjax = in_array(\Drupal::request()->get('_wrapper_format'), ['drupal_ajax', 'drupal_dialog', 'drupal_modal']);
+  if ($isAjax) {
+    $wrapper_id = "mix_ajax_form_" . $form_id;
+    $form['#prefix'] = '<div id="' . $wrapper_id . '">';
+    $form['#suffix'] = '</div>';
+    $form['actions']['submit']['#ajax'] = [
+      'callback' => 'mix_ajax_form_submit',
+      'wrapper' => $wrapper_id,
+      'effect' => 'fade',
+    ];
+  }
+
+}
+
+/**
+ * Modal form submit function.
+ */
+function mix_ajax_form_submit($form, FormStateInterface &$form_state) {
+
+  // Used to display results of drupal_set_message() calls.
+  $messages = StatusMessages::renderMessages(NULL);
+
+  // Create AJAX Response object.
+  $response = new AjaxResponse();
+
+  // Display form with messages.
+  $output = [];
+  $output[] = $messages;
+  $output[] = $form;
+  $response->addCommand(new HtmlCommand(NULL, $output));
+
+  // Close modal if no error.
+  if (!$form_state->getErrors()) {
+    $response->addCommand(new CloseDialogCommand());
+  }
+
+  return $response;
 }
 
 /**
@@ -170,6 +216,91 @@ function mix_page_attachments_alter(array &$attachments): void {
       }
     }
   }
+}
+
+/**
+ * Implements template_preprocess_html().
+ */
+function mix_preprocess_html(&$variables) {
+
+  // Add meta tags and change page title based on the meta settings.
+  $metaConfig = \Drupal::config('mix.settings')->get('meta');
+  $token_service = \Drupal::token();
+
+  // Meta tags for front page.
+  $is_front = \Drupal::service('path.matcher')->isFrontPage();
+  if ($is_front && $metaConfig['frontpage']['active']) {
+    // Set page title.
+    if ($metaConfig['frontpage']['title']) {
+      $frontpage_title = $metaConfig['frontpage']['title'];
+      // Replace token.
+      if ($token_service->scan($frontpage_title)) {
+        $frontpage_title = $token_service->replace($frontpage_title);
+      }
+      $variables['head_title'] = html_entity_decode($frontpage_title, ENT_QUOTES);
+    }
+
+    // Add pre-defined meta tags.
+    $meta_names = ['description', 'keywords'];
+    foreach ($meta_names as $name) {
+      if ($metaConfig['frontpage']['description']) {
+        $meta = [
+          '#tag' => 'meta',
+          '#attributes' => [
+            'name' => $name,
+            'content' => $metaConfig['frontpage'][$name],
+          ],
+        ];
+        $variables['#attached']['html_head'][] = [$meta, $name];
+      }
+    }
+
+    // Add user-defined meta tags.
+    if ($metaConfig['frontpage']['metatags']) {
+      // Parse metatags.
+      $meta_tags_array = Mix::getMetaTags($metaConfig['frontpage']['metatags']);
+      foreach ($meta_tags_array as $name => $content) {
+        $meta = [
+          '#tag' => 'meta',
+          '#attributes' => [
+            'name' => $name,
+            'content' => $content,
+          ],
+        ];
+        $variables['#attached']['html_head'][] = [$meta, $name];
+      }
+    }
+
+  }
+
+  // Node.
+  // Add meta tags for full node pages.
+  $route_match = \Drupal::routeMatch();
+  if ($route_match->getRouteName() == 'entity.node.canonical' && $metaConfig['node']['active']) {
+
+    if ($metaConfig['node']['description']) {
+      $content = $metaConfig['node']['description'];
+
+      // Replace token as needed.
+      if ($token_service->scan($content)) {
+        $node = $route_match->getParameter('node');
+        if ($node) {
+          $content = Xss::filter($token_service->replace($content, ['node' => $node]));
+        }
+      }
+
+      // Add tags.
+      $meta = [
+        '#tag' => 'meta',
+        '#attributes' => [
+          'name' => 'description',
+          'content' => $content,
+        ],
+      ];
+      $variables['#attached']['html_head'][] = [$meta, 'description'];
+    }
+  }
+
 }
 
 /**

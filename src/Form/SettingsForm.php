@@ -2,11 +2,13 @@
 
 namespace Drupal\mix\Form;
 
+use Drupal\Component\Serialization\Json;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\DrupalKernelInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 use Drupal\Core\Routing\UrlGeneratorInterface;
 use Drupal\Core\State\StateInterface;
 use Drupal\mix\Controller\Mix;
@@ -319,6 +321,26 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
           ':input[name="error_page"]' => ['checked' => TRUE],
         ],
       ],
+    ];
+
+    $form['seo'] = [
+      '#title' => 'SEO',
+      '#type' => 'details',
+      '#open' => TRUE,
+    ];
+
+    $meta_settings_link = Link::createFromRoute($this->t('Meta tags'), 'mix.meta_settings', [], [
+      'attributes' => [
+        'class' => ['use-ajax'],
+        'data-dialog-type' => 'modal',
+        'data-dialog-options' => Json::encode([
+          'width' => '80%',
+        ]),
+        'target' => '_blank',
+      ],
+    ]);
+    $form['seo']['links'] = [
+      '#markup' => $meta_settings_link->toString(),
     ];
 
     return parent::buildForm($form, $form_state);

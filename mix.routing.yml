@@ -23,3 +23,11 @@ mix.content_sync:
     _controller: '\Drupal\mix\Controller\MixContentSyncController::ajaxCallback'
   requirements:
     _permission: 'administer site configuration'
+
+mix.meta_settings:
+  path: '/admin/config/mix/meta'
+  defaults:
+    _title: 'Meta tags'
+    _form: 'Drupal\mix\Form\MetaSettingsForm'
+  requirements:
+    _permission: 'administer site configuration'

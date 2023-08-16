@@ -45,6 +45,39 @@ mix.settings:
           label: 'Ignored config names'
           sequence:
             type: string
+    meta:
+      type: mapping
+      label: 'Meta settings'
+      mapping:
+        frontpage:
+          type: mapping
+          label: 'Frontpage'
+          mapping:
+            active:
+              type: boolean
+              label: 'Active'
+            title:
+              type: string
+              label: 'Page title'
+            description:
+              type: string
+              label: 'Description'
+            keywords:
+              type: string
+              label: 'Keywords'
+            metatags:
+              type: string
+              label: 'Meta tags'
+        node:
+          type: mapping
+          label: 'Node'
+          mapping:
+            active:
+              type: boolean
+              label: 'Active'
+            description:
+              type: string
+              label: 'Description'
 
 # schema for Content sync.
 mix.content_sync.*:

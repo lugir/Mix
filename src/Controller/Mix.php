@@ -38,4 +38,40 @@ class Mix extends ControllerBase {
     return $isEnabled;
   }
 
+  /**
+   * Parse Meta tags from a str.
+   *
+   * @param string $str
+   *   A str contains <meta> tags.
+   *
+   * @return array
+   *   An array of meta tags.
+   *
+   * @see https://www.php.net/manual/en/function.get-meta-tags.php#117766
+   */
+  public static function getMetaTags($str) {
+    $pattern = '
+    ~<\s*meta\s
+
+    # using lookahead to capture type to $1
+      (?=[^>]*?
+      \b(?:name)\s*=\s*
+      (?|"\s*([^"]*?)\s*"|\'\s*([^\']*?)\s*\'|
+      ([^"\'>]*?)(?=\s*/?\s*>|\s\w+\s*=))
+    )
+
+    # capture content to $2
+    [^>]*?\bcontent\s*=\s*
+      (?|"\s*([^"]*?)\s*"|\'\s*([^\']*?)\s*\'|
+      ([^"\'>]*?)(?=\s*/?\s*>|\s\w+\s*=))
+    [^>]*>
+
+    ~ix';
+
+    if (preg_match_all($pattern, $str, $out)) {
+      return array_combine($out[1], $out[2]);
+    }
+    return [];
+  }
+
 }

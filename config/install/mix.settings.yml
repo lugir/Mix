@@ -12,3 +12,13 @@ config_import_ignore:
   list:
     - 'mix.settings:dev_mode'
     - 'mix.settings:config_import_ignore'
+meta:
+  frontpage:
+    active: false
+    title: '[site:name]'
+    description: ''
+    keywords: ''
+    metatags: ''
+  node:
+    active: false
+    description: '[node:summary]'
