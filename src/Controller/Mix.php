@@ -55,7 +55,7 @@ class Mix extends ControllerBase {
 
     # using lookahead to capture type to $1
       (?=[^>]*?
-      \b(?:name)\s*=\s*
+      \b(name|property|http-equiv)\s*=\s*
       (?|"\s*([^"]*?)\s*"|\'\s*([^\']*?)\s*\'|
       ([^"\'>]*?)(?=\s*/?\s*>|\s\w+\s*=))
     )
@@ -69,7 +69,15 @@ class Mix extends ControllerBase {
     ~ix';
 
     if (preg_match_all($pattern, $str, $out)) {
-      return array_combine($out[1], $out[2]);
+      $metaTags = [];
+      for ($i = 0; $i < count($out[0]); $i++) {
+        $metaTags[] = [
+          'attribute' => $out[1][$i],
+          'value' => $out[2][$i],
+          'content' => $out[3][$i],
+        ];
+      }
+      return $metaTags;
     }
     return [];
   }

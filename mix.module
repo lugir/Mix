@@ -76,7 +76,11 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
 
   // Ajax forms.
   // @see AjaxHelperTrait::isAjax()
-  $isAjax = in_array(\Drupal::request()->get('_wrapper_format'), ['drupal_ajax', 'drupal_dialog', 'drupal_modal']);
+  $isAjax = in_array(\Drupal::request()->get('_wrapper_format'), [
+    'drupal_ajax',
+    'drupal_dialog',
+    'drupal_modal',
+  ]);
   if ($isAjax) {
     $wrapper_id = "mix_ajax_form_" . $form_id;
     $form['#prefix'] = '<div id="' . $wrapper_id . '">';
@@ -259,14 +263,15 @@ function mix_preprocess_html(&$variables) {
     if ($metaConfig['frontpage']['metatags']) {
       // Parse metatags.
       $meta_tags_array = Mix::getMetaTags($metaConfig['frontpage']['metatags']);
-      foreach ($meta_tags_array as $name => $content) {
+      foreach ($meta_tags_array as $m) {
         $meta = [
           '#tag' => 'meta',
           '#attributes' => [
-            'name' => $name,
-            'content' => $content,
+            $m['attribute'] => $m['value'],
+            'content' => $m['content'],
           ],
         ];
+        $name = $m['attribute'] . '-' . $m['value'];
         $variables['#attached']['html_head'][] = [$meta, $name];
       }
     }

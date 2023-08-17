@@ -75,6 +75,8 @@ class MetaSettingsForm extends ConfigFormBase {
 &lt;meta name="MobileOptimized" content="width"&gt;
 &lt;meta name="HandheldFriendly" content="true"&gt;
 &lt;meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1"&gt;
+&lt;meta http-equiv="X-UA-Compatible" content="IE=edge" /&gt;
+&lt;meta property="og:xxx" content="xxx"&gt;
 </code></pre>
       '),
       '#default_value' => $config['frontpage']['metatags'] ?? '',

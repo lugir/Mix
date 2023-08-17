@@ -26,14 +26,6 @@ class MixMetaTest extends BrowserTestBase {
   protected static $modules = ['mix'];
 
   /**
-   * {@inheritdoc}
-   */
-  protected function setUp(): void {
-    parent::setUp();
-    // $this->drupalLogin($this->rootUser);
-  }
-
-  /**
    * Tests menu item visibility by role.
    */
   public function testFrontpageMeta() {
@@ -52,7 +44,9 @@ class MixMetaTest extends BrowserTestBase {
       'description' => $this->t('This is an example description'),
       'keywords' => $this->t('Word 1, Word 2, Word 3'),
       'metatags' => '<meta name="google-site-verification" content="xxx" />
-<meta name="custom-meta" content="xxx" />',
+<meta name="custom-meta" content="xxx" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta property="og:xxx" content="xxx">',
     ];
     $this->config('mix.settings')->set('meta.frontpage', $frontpage_meta)->save();
     Cache::invalidateTags(['rendered']);
@@ -64,7 +58,8 @@ class MixMetaTest extends BrowserTestBase {
     $this->assertSession()->elementExists('css', 'meta[name="keywords"]');
     $this->assertSession()->elementExists('css', 'meta[name="google-site-verification"]');
     $this->assertSession()->elementExists('css', 'meta[name="custom-meta"]');
-
+    $this->assertSession()->elementExists('css', 'meta[http-equiv="X-UA-Compatible"]');
+    $this->assertSession()->elementExists('css', 'meta[property="og:xxx"]');
   }
 
 }
