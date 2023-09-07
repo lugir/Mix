@@ -9,6 +9,9 @@ mix.settings:
     dev_mode:
       type: boolean
       label: 'Enable development mode'
+    hide_submit:
+      type: boolean
+      label: 'Hide submit button'
     remove_x_generator:
       type: boolean
       label: 'Remove X-Generator'

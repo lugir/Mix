@@ -42,6 +42,12 @@ function mix_help($route_name, RouteMatchInterface $route_match) {
  */
 function mix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
+  // Hide submit button.
+  if (\Drupal::config('mix.settings')->get('hide_submit')) {
+    // Attach hide submit button library to form.
+    $form['#attached']['library'][] = 'mix/hide_submit';
+  }
+
   // Show form id.
   if (\Drupal::state()->get('mix.show_form_id')) {
     $form['mix_show_form_id'] = [

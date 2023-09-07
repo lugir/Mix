@@ -171,6 +171,13 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('hide_revision_field'),
     ];
 
+    $form['hide_submit'] = [
+      '#title' => $this->t('Enable "Hide submit button"'),
+      '#description' => $this->t('To avoid duplicate form submissions, disable the submit button after it has been clicked.'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('hide_submit'),
+    ];
+
     // Show form ID.
     $form['dev']['show_form_id'] = [
       '#title' => $this->t('Show form ID'),
@@ -387,6 +394,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
+      ->set('hide_submit', $form_state->getValue('hide_submit'))
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))

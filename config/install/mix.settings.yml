@@ -1,5 +1,6 @@
 hide_revision_field: false
 dev_mode: false
+hide_submit: false
 remove_x_generator: false
 show_content_sync_id: false
 content_sync_ids: {  }

@@ -8,3 +8,6 @@ dropdown:
   css:
     theme:
       css/dropdown.css: {}
+hide_submit:
+  js:
+    js/hide_submit.js: {}
