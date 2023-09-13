@@ -2,8 +2,13 @@
 
 namespace Drupal\mix\Controller;
 
+use Drupal\Core\Ajax\AjaxResponse;
+use Drupal\Core\Ajax\CloseDialogCommand;
+use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Config\BootstrapConfigStorageFactory;
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element\StatusMessages;
 
 /**
  * Returns responses for Mix routes.
@@ -80,6 +85,31 @@ class Mix extends ControllerBase {
       return $metaTags;
     }
     return [];
+  }
+
+  /**
+   * Modal form submit function.
+   */
+  public static function ajaxFormSubmit(array &$form, FormStateInterface $form_state) {
+
+    // Used to display results of drupal_set_message() calls.
+    $messages = StatusMessages::renderMessages(NULL);
+
+    // Create AJAX Response object.
+    $response = new AjaxResponse();
+
+    // Display form with messages.
+    $output = [];
+    $output[] = $messages;
+    $output[] = $form;
+    $response->addCommand(new HtmlCommand(NULL, $output));
+
+    // Close modal if no error.
+    if (!$form_state->getErrors()) {
+      $response->addCommand(new CloseDialogCommand());
+    }
+
+    return $response;
   }
 
 }

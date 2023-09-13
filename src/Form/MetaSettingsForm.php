@@ -32,6 +32,8 @@ class MetaSettingsForm extends ConfigFormBase {
 
     $config = $this->config('mix.settings')->get('meta');
 
+    $form['#mix_ajax_form'] = TRUE;
+
     // Frontpage.
     $form['frontpage'] = [
       '#title' => $this->t('Front page'),

@@ -8,12 +8,8 @@
 use Drupal\block\BlockInterface;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
-use Drupal\Core\Ajax\AjaxResponse;
-use Drupal\Core\Ajax\CloseDialogCommand;
-use Drupal\Core\Ajax\HtmlCommand;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\BubbleableMetadata;
-use Drupal\Core\Render\Element\StatusMessages;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\Url;
@@ -83,48 +79,22 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
   // Ajax forms.
   // @see AjaxHelperTrait::isAjax()
   $isAjax = in_array(\Drupal::request()->get('_wrapper_format'), [
-    // Issue #3386397: breaks ajax views ui.
-    // 'drupal_ajax',.
+    'drupal_ajax',
     'drupal_dialog',
     'drupal_modal',
   ]);
 
-  if ($isAjax) {
+  if ($isAjax && $form['#mix_ajax_form']) {
     $wrapper_id = "mix_ajax_form_" . $form_id;
     $form['#prefix'] = '<div id="' . $wrapper_id . '">';
     $form['#suffix'] = '</div>';
     $form['actions']['submit']['#ajax'] = [
-      'callback' => 'mix_ajax_form_submit',
+      'callback' => '\Drupal\mix\Controller\Mix::ajaxFormSubmit',
       'wrapper' => $wrapper_id,
       'effect' => 'fade',
     ];
   }
 
-}
-
-/**
- * Modal form submit function.
- */
-function mix_ajax_form_submit($form, FormStateInterface &$form_state) {
-
-  // Used to display results of drupal_set_message() calls.
-  $messages = StatusMessages::renderMessages(NULL);
-
-  // Create AJAX Response object.
-  $response = new AjaxResponse();
-
-  // Display form with messages.
-  $output = [];
-  $output[] = $messages;
-  $output[] = $form;
-  $response->addCommand(new HtmlCommand(NULL, $output));
-
-  // Close modal if no error.
-  if (!$form_state->getErrors()) {
-    $response->addCommand(new CloseDialogCommand());
-  }
-
-  return $response;
 }
 
 /**
