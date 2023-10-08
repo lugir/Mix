@@ -5,7 +5,7 @@ namespace Drupal\Tests\mix\Functional;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Tests Mix custom error page..
+ * Tests Mix block class.
  *
  * @group mix
  */
@@ -31,6 +31,7 @@ class MixBlockTest extends BrowserTestBase {
     // Place a block with custom CSS classes.
     $this->drupalGet('admin/structure/block/add/system_menu_block:account/stark', ['query' => ['region' => 'secondary_menu']]);
     $edit = [
+      'id' => 'useraccountmenu',
       'region' => 'secondary_menu',
       'third_party_settings[mix][class]' => 'custom-block-class custom-block-class2',
     ];

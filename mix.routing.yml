@@ -31,3 +31,6 @@ mix.meta_settings:
     _form: 'Drupal\mix\Form\MetaSettingsForm'
   requirements:
     _permission: 'administer site configuration'
+
+route_callbacks:
+  - '\Drupal\mix\Routing\MixRoutes::routes'

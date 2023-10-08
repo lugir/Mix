@@ -12,6 +12,9 @@ mix.settings:
     hide_submit:
       type: boolean
       label: 'Hide submit button'
+    standalone_password_page:
+      type: boolean
+      label: 'Standalone password page'
     remove_x_generator:
       type: boolean
       label: 'Remove X-Generator'

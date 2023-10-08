@@ -178,6 +178,13 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('hide_submit'),
     ];
 
+    $form['standalone_password_page'] = [
+      '#title' => $this->t('Enable "Standalone change password page"'),
+      '#description' => $this->t('Move password fields in user form to a standalone password change page for better UX'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('standalone_password_page'),
+    ];
+
     // Show form ID.
     $form['dev']['show_form_id'] = [
       '#title' => $this->t('Show form ID'),
@@ -358,6 +365,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
 
+    $rebulidRouteCache = FALSE;
     $rebuildCache = FALSE;
     $rebuildContainer = FALSE;
 
@@ -390,11 +398,19 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
       $rebuildCache = TRUE;
     }
 
+    // Rebuild route if 'standalone_password_page' value changes.
+    $oldStandalonePasswordPage = $config->get('standalone_password_page');
+    $newStandalonePasswordPage = $form_state->getValue('standalone_password_page');
+    if ($oldStandalonePasswordPage != $newStandalonePasswordPage) {
+      $rebulidRouteCache = TRUE;
+    }
+
     // Save config.
     $this->config('mix.settings')
       ->set('dev_mode', $form_state->getValue('dev_mode'))
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
       ->set('hide_submit', $form_state->getValue('hide_submit'))
+      ->set('standalone_password_page', $form_state->getValue('standalone_password_page'))
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))
       ->set('error_page.content', $form_state->getValue('error_page_content'))
@@ -435,6 +451,10 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
       // based on dev_mode.
       $rebuildCache = TRUE;
       $rebuildContainer = TRUE;
+    }
+
+    if ($rebulidRouteCache) {
+      \Drupal::service("router.builder")->rebuild();
     }
 
     if ($rebuildCache) {
