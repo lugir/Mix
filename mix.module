@@ -84,7 +84,7 @@ function hook_form_{{ form_id }}_alter(&$form, \Drupal\Core\Form\FormStateInterf
     'drupal_modal',
   ]);
 
-  if ($isAjax && $form['#mix_ajax_form']) {
+  if ($isAjax && isset($form['#mix_ajax_form']) && $form['#mix_ajax_form']) {
     $wrapper_id = "mix_ajax_form_" . $form_id;
     $form['#prefix'] = '<div id="' . $wrapper_id . '">';
     $form['#suffix'] = '</div>';
