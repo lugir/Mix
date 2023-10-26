@@ -108,7 +108,7 @@ function mix_form_user_admin_settings_alter(&$form, FormStateInterface $form_sta
     '#description' => t('Provided by <a href=":url" target="_blank">Mix</a> module', [':url' => 'https://www.drupal.org/project/mix']),
     '#default_value' => $config->get('register_password'),
   ];
-  $form['actions']['submit']['#submit'][] = '_mix_user_admin_settings_submit';
+  $form['#submit'][] = '_mix_user_admin_settings_submit';
 }
 
 /**
