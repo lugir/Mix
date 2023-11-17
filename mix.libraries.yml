@@ -11,3 +11,6 @@ dropdown:
 hide_submit:
   js:
     js/hide_submit.js: {}
+unsaved_form_confirm:
+  js:
+    js/unsaved_form_confirm.js: {}

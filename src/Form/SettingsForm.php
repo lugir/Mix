@@ -178,6 +178,13 @@ class SettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('hide_submit'),
     ];
 
+    $form['unsaved_form_confirm'] = [
+      '#title' => $this->t('Enable "Unsaved form confirmation"'),
+      '#description' => $this->t('Show a confirm dialog when user is about to leave an unsaved form.'),
+      '#type' => 'checkbox',
+      '#default_value' => $config->get('unsaved_form_confirm'),
+    ];
+
     $form['standalone_password_page'] = [
       '#title' => $this->t('Enable "Standalone change password page"'),
       '#description' => $this->t('Move password fields in user form to a standalone password change page for better UX'),
@@ -410,6 +417,7 @@ For more details please see the <a href="https://www.drupal.org/docs/contributed
       ->set('dev_mode', $form_state->getValue('dev_mode'))
       ->set('hide_revision_field', $form_state->getValue('hide_revision_field'))
       ->set('hide_submit', $form_state->getValue('hide_submit'))
+      ->set('unsaved_form_confirm', $form_state->getValue('unsaved_form_confirm'))
       ->set('standalone_password_page', $form_state->getValue('standalone_password_page'))
       ->set('remove_x_generator', $form_state->getValue('remove_x_generator'))
       ->set('error_page.mode', $form_state->getValue('error_page'))

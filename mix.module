@@ -45,6 +45,12 @@ function mix_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     $form['#attached']['library'][] = 'mix/hide_submit';
   }
 
+  // Unsaved form confirm.
+  if (\Drupal::config('mix.settings')->get('unsaved_form_confirm')) {
+    // Attach library to form.
+    $form['#attached']['library'][] = 'mix/unsaved_form_confirm';
+  }
+
   // Show form id.
   if (\Drupal::state()->get('mix.show_form_id')) {
     $form['mix_show_form_id'] = [

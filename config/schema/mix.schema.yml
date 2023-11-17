@@ -12,6 +12,9 @@ mix.settings:
     hide_submit:
       type: boolean
       label: 'Hide submit button'
+    unsaved_form_confirm:
+      type: boolean
+      label: 'Unsaved form confirm'
     standalone_password_page:
       type: boolean
       label: 'Standalone password page'
